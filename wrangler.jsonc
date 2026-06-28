@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "azula-site",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-28",
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  // Custom domain for azula.app. Requires the zone on this Cloudflare account;
+  // `wrangler deploy` provisions the route + cert. Until then, the worker is
+  // reachable at its workers.dev subdomain.
+  "routes": [
+    { "pattern": "azula.app", "custom_domain": true },
+    { "pattern": "www.azula.app", "custom_domain": true }
+  ]
+}

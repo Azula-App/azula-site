@@ -1,5 +1,5 @@
 import { invitePage, landingPage, notFoundPage } from "./pages";
-import { isValidToken, sessionFingerprint } from "./links";
+import { isValidToken } from "./links";
 import { appleAppSiteAssociation, assetLinks } from "./wellknown";
 
 // No bindings yet. Run `npm run cf-typegen` to regenerate when bindings are added.
@@ -45,31 +45,34 @@ export default {
       return html(invitePage(token));
     }
 
-    // MCP endpoint for a session. The token identifies which Azula session an
-    // LLM should be bridged to. The actual MCP↔iroh bridge is a separate server
-    // component (Workers can't speak iroh's UDP/QUIC) — see site/URLS.md.
-    const mcp = path.match(/^\/mcp\/(.+)$/);
-    if (mcp) {
-      const token = safeDecode(mcp[1]);
-      if (token === null || !isValidToken(token)) return json({ error: "invalid session token" }, 400);
+    // Static MCP endpoint. Sessions are no longer encoded in the URL: configure
+    // this endpoint once in an MCP client, then pair a device by giving azula
+    // its session link (the `connect` tool or `azula pair <url>`). The actual
+    // MCP↔iroh bridge is `azula serve-mcp` (Workers can't speak iroh) — see
+    // site/URLS.md. A token path is accepted but ignored, with a deprecation note.
+    if (path === "/mcp" || path.startsWith("/mcp/")) {
       if (request.method === "POST") {
         return json(
           {
             jsonrpc: "2.0",
             id: null,
-            error: { code: -32601, message: "azula MCP bridge is not deployed for this session yet" },
+            error: { code: -32601, message: "the azula MCP bridge is `azula serve-mcp`, not this worker" },
           },
           501,
         );
       }
+      const deprecated = path.startsWith("/mcp/");
       return json({
         service: "azula-mcp",
         transport: "streamable-http",
-        session: sessionFingerprint(token),
         status: "placeholder",
+        ...(deprecated
+          ? { note: "tokens in the MCP URL are deprecated — configure the static /mcp endpoint and pair devices with the connect tool or `azula pair <url>`." }
+          : {}),
         message:
-          "Public MCP endpoint URL for an Azula session. Add this URL to an MCP-capable LLM client. " +
-          "The MCP↔iroh bridge that fulfils requests is a separate server component — see the repo's site/URLS.md.",
+          "Configure this MCP endpoint once in your LLM client, then pair an Azula device by giving " +
+          "azula its session link (azula.app/s/<code>) via the connect tool or `azula pair`. The " +
+          "MCP↔iroh bridge is `azula serve-mcp` — see the repo's site/URLS.md.",
       });
     }
 

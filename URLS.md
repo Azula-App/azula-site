@@ -6,14 +6,14 @@ How azula links sessions across the web, the native apps, and an LLM over MCP.
 
 Every Azula session is identified by a **session token** — a URL-safe string the
 app already has: its **iroh `EndpointTicket`** (endpoint id + relay url + direct
-addresses, base32-encoded). The token is what a peer or a bridge needs to dial
-the app over iroh. The website treats it **opaquely** (validates the charset,
-derives a short display fingerprint); only the app and the MCP↔iroh bridge
-decode it.
+addresses, base32-encoded). It is wrapped in a `…/s/<token>` link (or `azula://`,
+or shared as a raw token). To link an LLM you do **not** put the token in the MCP
+URL — you give the link to azula (the `connect` tool or `azula pair <url>`), which
+parses the token locally (no network) and dials the app. The website treats the
+token **opaquely**.
 
 > Tokens are bearer credentials: anyone with one can open a direct connection to
-> that endpoint. Treat invite/MCP URLs like passwords. (Future: short, revocable
-> ids backed by KV — see below.)
+> that endpoint. Treat invite links like passwords.
 
 ## Routes (served by the Worker)
 
@@ -21,7 +21,7 @@ decode it.
 |-----|---------|
 | `https://azula.app/` | Landing page |
 | `https://azula.app/s/<token>` | **Session invite** — universal/app link. Opens the app to that session; falls back to a web page with the code + store links. `/connect/<token>` is an alias. |
-| `https://azula.app/mcp/<token>` | **MCP endpoint** — the URL you add to an MCP-capable LLM client. The `<token>` says *which* Azula session to bridge to. |
+| `https://azula.app/mcp` | **MCP endpoint** — *static*; configured once in an LLM client. Sessions are not in the URL; you pair devices via the `connect` tool / `azula pair`. (A `/mcp/<token>` path is accepted but the token is ignored, with a deprecation note.) |
 | `https://azula.app/.well-known/apple-app-site-association` | iOS universal-link association (served as `application/json`). |
 | `https://azula.app/.well-known/assetlinks.json` | Android App Links association. |
 
@@ -38,35 +38,38 @@ invite page's JS and registered by both apps).
 
 ## Flow B — link an LLM (MCP)
 
-1. App (or the user) forms the MCP URL `https://azula.app/mcp/<token>`.
-2. The user adds that URL to an MCP-capable LLM client (Claude, etc.).
-3. The LLM client speaks MCP (Streamable HTTP) to that URL. A **bridge** behind
-   the URL decodes `<token>` → iroh ticket, dials the app on the `azula/llm/0`
-   ALPN, and exposes MCP tools (e.g. `send_message`) that forward to the app and
-   stream the reply back.
+1. Run the bridge where iroh works: `azula serve-mcp --bind 0.0.0.0:8765`. It
+   serves a **static** MCP endpoint at `/mcp` (no token in the path).
+2. Configure that endpoint **once** in an MCP-capable LLM client — point
+   `mcp.azula.app` (or a proxy) at the bridge, or use its address directly.
+3. Pair a device by giving azula its session link: either the **`connect`** tool
+   (paste `https://azula.app/s/<token>` in chat) or **`azula pair <url>`**. The
+   bridge parses the token, dials the app on the `azula/llm/0` ALPN, and exposes
+   `connect` / `list_devices` / `send_message` / `get_messages` / `disconnect`.
+   One bridge holds **multiple devices** at once, addressed by name.
+
+### Device registry (state files the LLM knows about)
+
+Paired devices persist as JSON so they survive restarts, work across git
+worktrees, and are visible to an agent:
+
+- **Project-local** `<worktree-root>/.azula/devices.json` — git-worktree-aware
+  (first ancestor containing a `.git`). `azula pair` writes here inside a repo.
+- **Global** `~/.azula/devices.json` — fallback outside a repo (or with
+  `--global`). Reads merge global then project (project wins by name).
+- **Runtime** `$TMPDIR/azula/bridge.json` — a live bridge's `{bind, pid,
+  devices:[{name,connected}]}`, so an agent can discover a running bridge.
 
 ### Why the bridge is separate from this Worker
 
 Cloudflare Workers cannot open iroh connections (no raw UDP/QUIC, no long-lived
-holepunched sockets). So `/mcp/<token>` here is a **documented placeholder**: it
-validates the token and describes the endpoint. The real MCP server that fulfils
-requests runs where iroh can run. Options:
-
-- **`azula-cli serve-mcp`** — this exists now: it runs an MCP server over
-  Streamable HTTP and dials the app over iroh, exposing `get_messages` /
-  `send_message` tools to the LLM. Run it on a host/container
-  (`azula serve-mcp --app-ticket <token> --bind 0.0.0.0:8765`) and point
-  `mcp.azula.app` (or a Worker proxy route) at its `/mcp` endpoint. v1 is one
-  session per process; multi-tenant routing by token is the remaining piece.
-- A separate long-running container service.
-
-When the bridge exists, either (a) point a `mcp.azula.app` DNS record at it and
-hand out `https://mcp.azula.app/mcp/<token>`, or (b) have this Worker reverse-proxy
-`POST /mcp/<token>` to the bridge.
+holepunched sockets), so `/mcp` here is just an info placeholder. The real MCP
+server is **`azula serve-mcp`** — run it on a host/container and point
+`mcp.azula.app` (or a Worker reverse-proxy of `/mcp`) at it.
 
 ## Future: short, revocable links
 
-Embedding the full ticket makes long URLs and can't be revoked. A short-id scheme
-would: app `POST`s its ticket to `azula.app` → Worker stores `id → {ticket, exp}`
-in **KV/D1** → returns `…/s/<id>` and `…/mcp/<id>`. The Worker (and bridge) resolve
-`id → ticket`. This adds a registration endpoint + storage binding (none today).
+Embedding the full ticket makes long invite links that can't be revoked. A
+short-id scheme would: app `POST`s its ticket to `azula.app` → Worker stores
+`id → {ticket, exp}` in **KV/D1** → hands out `…/s/<id>`; the app/bridge resolve
+`id → ticket`. Adds a registration endpoint + storage binding (none today).

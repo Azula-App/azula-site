@@ -76,11 +76,11 @@ export function landingPage(): string {
 
     <div class="sec">
       <h2>Connecting an LLM to your session</h2>
-      <p>Every session has a code. Wrap it in an MCP endpoint URL and add it to any MCP-capable LLM
-      client — the LLM then reads and writes your session:</p>
-      <pre><code>https://azula.app/mcp/&lt;your-session-code&gt;</code></pre>
-      <p>Sharing a session with a person instead? Send them the invite link — it opens the app if
-      installed, or shows them how to join:</p>
+      <p>Configure the azula MCP endpoint once in any MCP-capable LLM client — no per-session URLs.
+      Then pair a device by giving azula its session link (in chat, or <code>azula pair</code>):</p>
+      <pre><code>connect  https://azula.app/s/&lt;your-session-code&gt;</code></pre>
+      <p>The same link works for a person — send it to a friend and it opens the app, or shows them
+      how to join:</p>
       <pre><code>https://azula.app/s/&lt;your-session-code&gt;</code></pre>
     </div>
 

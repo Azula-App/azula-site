@@ -2,11 +2,11 @@
 // the real signing identities once the apps are signed — see docs/deeplinks.md.
 
 // iOS Apple App Site Association. appIDs are "<TeamID>.<bundleIdentifier>".
-const IOS_APP_ID = "TEAMID.dev.azula"; // PLACEHOLDER — replace TEAMID with your Apple Developer Team ID
+const IOS_APP_ID = "TEAMID.app.azula"; // PLACEHOLDER — replace TEAMID with your Apple Developer Team ID
 
 // Android App Links. The fingerprint is the SHA-256 of the *release* signing
 // cert (or the Play App Signing cert from the Play Console).
-const ANDROID_PACKAGE = "dev.azula";
+const ANDROID_PACKAGE = "app.azula";
 const ANDROID_SHA256 = "REPLACE_WITH_RELEASE_SHA256_FINGERPRINT"; // PLACEHOLDER
 
 export function appleAppSiteAssociation(): unknown {

@@ -4,6 +4,10 @@ const FONTS =
   '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
   '<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">';
 
+const ICONS =
+  '<link rel="icon" type="image/svg+xml" href="/favicon.svg">' +
+  '<link rel="apple-touch-icon" href="/apple-touch-icon.png">';
+
 const STYLE = `
   :root{--pink:#ff2d9b;--pink2:#ff6ec7;--green:#52c98a;--bg0:#070709;--bg1:#0a0a10;--bg2:#0c0c13;
     --line:#1d1d26;--line2:#23232e;--t0:#f0f0f6;--t1:#d6d6e0;--dim:#8a8a9a;--faint:#6a6a7a}
@@ -12,7 +16,11 @@ const STYLE = `
     font:15px/1.6 'Space Grotesk',system-ui,sans-serif;min-height:100vh}
   a{color:var(--pink2);text-decoration:none}
   .wrap{max-width:880px;margin:0 auto;padding:48px 22px 64px}
-  .brand{font:700 30px 'Space Grotesk';color:var(--pink);text-shadow:0 0 16px rgba(255,45,155,.4);letter-spacing:-.5px}
+  .brand{font:700 30px 'JetBrains Mono';color:var(--pink);text-shadow:0 0 16px rgba(255,45,155,.4);letter-spacing:-1px}
+  .brand .prompt{color:var(--green);margin-right:9px;text-shadow:0 0 12px rgba(82,201,138,.4)}
+  .brand .cursor{display:inline-block;width:11px;height:24px;margin-left:7px;vertical-align:-3px;
+    background:var(--pink);box-shadow:0 0 10px rgba(255,45,155,.55);animation:blink 1.05s steps(1) infinite}
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
   .tag{font:12px 'JetBrains Mono';color:var(--faint);margin-top:2px;letter-spacing:1px}
   .hero{margin-top:40px}
   .hero h1{font:700 40px/1.15 'Space Grotesk';color:var(--t0);margin:0 0 14px}
@@ -43,12 +51,13 @@ const STYLE = `
 function shell(title: string, body: string): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title}</title><meta name="theme-color" content="#070709">${FONTS}<style>${STYLE}</style></head>
+<title>${title}</title><meta name="theme-color" content="#070709">${ICONS}${FONTS}<style>${STYLE}</style></head>
 <body><div class="wrap">${body}</div></body></html>`;
 }
 
 const header =
-  '<div class="brand">azula</div><div class="tag">p2p over iroh</div>';
+  '<div class="brand"><span class="prompt">&rsaquo;</span>azula<span class="cursor"></span></div>' +
+  '<div class="tag">p2p over iroh</div>';
 
 const STORE_BTNS =
   // PLACEHOLDER store links — replace with the real App Store / Play URLs once published.

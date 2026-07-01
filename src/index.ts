@@ -1,6 +1,7 @@
 import { invitePage, landingPage, notFoundPage } from "./pages";
 import { isValidToken } from "./links";
 import { appleAppSiteAssociation, assetLinks } from "./wellknown";
+import { APPLE_TOUCH_PNG_B64, FAVICON_SVG, b64ToBytes } from "./icon";
 
 // No bindings yet. Run `npm run cf-typegen` to regenerate when bindings are added.
 export interface Env {}
@@ -31,6 +32,18 @@ export default {
 
     if (path === "/" || path === "") return html(landingPage());
     if (path === "/health") return new Response("ok", { headers: SECURITY_HEADERS });
+
+    // Brand icons (see icon.ts).
+    if (path === "/favicon.svg") {
+      return new Response(FAVICON_SVG, {
+        headers: { "content-type": "image/svg+xml; charset=utf-8", "cache-control": "public, max-age=86400", ...SECURITY_HEADERS },
+      });
+    }
+    if (path === "/apple-touch-icon.png") {
+      return new Response(b64ToBytes(APPLE_TOUCH_PNG_B64), {
+        headers: { "content-type": "image/png", "cache-control": "public, max-age=86400", ...SECURITY_HEADERS },
+      });
+    }
 
     // Deeplink association files. Must be served as application/json with no
     // redirect — that's the whole reason these run through the Worker.

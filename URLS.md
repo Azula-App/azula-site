@@ -2,31 +2,55 @@
 
 How azula links sessions across the web, the native apps, and an LLM over MCP.
 
-## The session token
+## Invite payloads (current)
 
-Every Azula session is identified by a **session token** — a URL-safe string the
-app already has: its **iroh `EndpointTicket`** (endpoint id + relay url + direct
-addresses, base32-encoded). It is wrapped in a `…/s/<token>` link (or `azula://`,
-or shared as a raw token). To link an LLM you do **not** put the token in the MCP
-URL — you give the link to azula (the `connect` tool or `azula pair <url>`), which
-parses the token locally (no network) and dials the app. The website treats the
-token **opaquely**.
+The primary way to share access to an azula node is an **invite payload**: a
+binary header (id, validity window, single-use flag, optional Ed25519
+signature) wrapping the issuer's iroh `EndpointTicket`, encoded as `"azi" +
+base32(...)` (RFC 4648, no padding, lowercase). Full payload layout, the wire
+protocol, the accept-side verification model, and the shared cross-repo test
+vectors live in
+[`azula-docs/docs/invitations.md`](../azula-docs/docs/invitations.md) — read
+that first; this file only documents the Worker-served routes.
 
-> Tokens are bearer credentials: anyone with one can open a direct connection to
-> that endpoint. Treat invite links like passwords.
+- `https://azula.app/i/<encoded>` — canonical share link (universal/app link).
+  Opens the app directly to the invite; falls back to a web page (`invitePageV2`
+  in `src/pages.ts`) showing the invite id fingerprint, expiry countdown,
+  signed/single-use badges, store links, and the raw payload to paste. Invalid
+  or truncated payloads fall back to the same invalid-link page as the legacy
+  `/s/` route, with a 404 status.
+- `azula://i?c=<encoded>` — custom-scheme fallback, tried by the invite page's
+  JS and registered by both apps.
+- A bare `azi…` string can be pasted directly into the app's connect box.
+
+## The legacy session token (still supported)
+
+Before invite payloads, azula shared the raw iroh `EndpointTicket` string
+directly — a URL-safe **session token** wrapped in a `…/s/<token>` link (or
+`azula://`, or shared as a raw token). The website treats the token
+**opaquely**.
+
+> Legacy tokens are bearer credentials: anyone with one can open a direct
+> connection to that endpoint. Treat invite links like passwords.
+
+These routes **keep parsing forever for outbound dialing** during the
+transition (see `invitations.md`'s "Transition / compat" section), but new
+share links should use `/i/`.
 
 ## Routes (served by the Worker)
 
 | URL | Purpose |
 |-----|---------|
 | `https://azula.app/` | Landing page |
-| `https://azula.app/s/<token>` | **Session invite** — universal/app link. Opens the app to that session; falls back to a web page with the code + store links. `/connect/<token>` is an alias. |
+| `https://azula.app/i/<encoded>` | **Invite (v2)** — universal/app link. See above. |
+| `https://azula.app/s/<token>` | *Legacy* session invite — universal/app link. Opens the app to that session; falls back to a web page with the code + store links. `/connect/<token>` is an alias. Legacy-supported, not the canonical share format anymore. |
 | `https://azula.app/mcp` | **MCP endpoint** — *static*; configured once in an LLM client. Sessions are not in the URL; you pair devices via the `connect` tool / `azula pair`. (A `/mcp/<token>` path is accepted but the token is ignored, with a deprecation note.) |
-| `https://azula.app/.well-known/apple-app-site-association` | iOS universal-link association (served as `application/json`). |
-| `https://azula.app/.well-known/assetlinks.json` | Android App Links association. |
+| `https://azula.app/.well-known/apple-app-site-association` | iOS universal-link association (served as `application/json`); covers `/i/*`, `/s/*`, and `/connect/*`. |
+| `https://azula.app/.well-known/assetlinks.json` | Android App Links association (host-scoped, no per-path entries needed). |
 
-Custom-scheme fallback for deeplinks: `azula://connect?code=<token>` (used by the
-invite page's JS and registered by both apps).
+Custom-scheme fallbacks: `azula://i?c=<encoded>` (current) and
+`azula://connect?code=<token>` (legacy, used by the `/s/` invite page's JS and
+registered by both apps).
 
 ## Flow A — link a person (peer chat)
 
@@ -70,9 +94,13 @@ holepunched sockets), so `/mcp` here is just an info placeholder. The real MCP
 server is **`azula serve-mcp`** — run it on a host/container and point
 `mcp.azula.app` (or a Worker reverse-proxy of `/mcp`) at it.
 
-## Future: short, revocable links
+## Revocable, identified links
 
-Embedding the full ticket makes long invite links that can't be revoked. A
-short-id scheme would: app `POST`s its ticket to `azula.app` → Worker stores
-`id → {ticket, exp}` in **KV/D1** → hands out `…/s/<id>`; the app/bridge resolve
-`id → ticket`. Adds a registration endpoint + storage binding (none today).
+The old "Future: short, revocable links" idea here (a Worker-side `POST
+ticket → id` KV/D1 mapping) is **superseded** by the invite payload scheme
+documented in
+[`azula-docs/docs/invitations.md`](../azula-docs/docs/invitations.md): an
+invite id, validity window, and single-use flag travel in the payload itself,
+and revocation is issuer-side (deleting the id from the issuer's local
+issued-invite store) — no Worker storage needed. See that doc's "Trust model"
+and "Stores" sections for the full design.

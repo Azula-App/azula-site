@@ -1,5 +1,5 @@
-import { invitePage, landingPage, notFoundPage } from "./pages";
-import { isValidToken } from "./links";
+import { invitePage, invitePageV2, landingPage, notFoundPage } from "./pages";
+import { decodeInviteHeader, isValidToken } from "./links";
 import { appleAppSiteAssociation, assetLinks } from "./wellknown";
 import { APPLE_TOUCH_PNG_B64, FAVICON_SVG, b64ToBytes } from "./icon";
 
@@ -50,12 +50,23 @@ export default {
     if (path === "/.well-known/apple-app-site-association") return json(appleAppSiteAssociation());
     if (path === "/.well-known/assetlinks.json") return json(assetLinks());
 
-    // Session invite (universal / app link). /connect/* is an alias.
+    // Legacy session invite (universal / app link). /connect/* is an alias.
+    // Kept exactly as-is during the transition — see URLS.md.
     const invite = path.match(/^\/(?:s|connect)\/(.+)$/);
     if (invite) {
       const token = safeDecode(invite[1]);
       if (token === null || !isValidToken(token)) return html(invitePage(null), 404);
       return html(invitePage(token));
+    }
+
+    // Invite payload v2 (see azula-docs/docs/invitations.md). Falls back to the
+    // same invalid-link page as the legacy route when decoding fails.
+    const inviteV2 = path.match(/^\/i\/(.+)$/);
+    if (inviteV2) {
+      const payload = safeDecode(inviteV2[1]);
+      const header = payload !== null ? decodeInviteHeader(payload) : null;
+      if (payload === null || header === null) return html(invitePage(null), 404);
+      return html(invitePageV2(payload, header));
     }
 
     // Static MCP endpoint. Sessions are no longer encoded in the URL: configure

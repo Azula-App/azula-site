@@ -16,8 +16,9 @@ export function appleAppSiteAssociation(): unknown {
         {
           appIDs: [IOS_APP_ID],
           components: [
-            { "/": "/s/*", comment: "session invite links" },
-            { "/": "/connect/*", comment: "session invite links (alias)" },
+            { "/": "/i/*", comment: "invite links (v2)" },
+            { "/": "/s/*", comment: "legacy session invite links" },
+            { "/": "/connect/*", comment: "legacy session invite links (alias)" },
           ],
         },
       ],

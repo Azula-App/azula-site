@@ -7,6 +7,7 @@ describe("appleAppSiteAssociation", () => {
     const components = aasa.applinks.details[0].components;
     expect(components).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({ "/": "/i/*" }),
         expect.objectContaining({ "/": "/s/*" }),
         expect.objectContaining({ "/": "/connect/*" }),
       ]),

@@ -3,6 +3,11 @@ import worker, { type Env } from "./index";
 
 const env = {} as Env;
 
+// Shared cross-repo vector — see azula-docs/docs/invitations.md and links.test.ts.
+// V1 — unsigned, no expiry, multi-use.
+const V1_INVITE_ENCODED =
+  "aziaeaaci2fm6e2xtppnfk3saaaaaaaaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bnoruwg23foqwwe6lumvzq";
+
 async function get(path: string, init?: RequestInit): Promise<Response> {
   return worker.fetch(new Request(`https://azula.app${path}`, init), env);
 }
@@ -42,6 +47,30 @@ describe("routing", () => {
   it("GET /s/<invalid-token> falls back to the invalid-link page with 404", async () => {
     // "a" is below the 6-char minimum enforced by isValidToken.
     const res = await get("/s/a");
+    expect(res.status).toBe(404);
+    const body = await res.text();
+    expect(body).toContain("isn't valid");
+  });
+
+  it("GET /i/<valid-payload> returns 200 with the invite page v2", async () => {
+    const res = await get(`/i/${V1_INVITE_ENCODED}`);
+    expect(res.status).toBe(200);
+    const body = await res.text();
+    expect(body).toContain("Accept an azula invite");
+    expect(body).toContain("0123456789abcdef");
+    expect(body).toContain(`azula://i?c=${V1_INVITE_ENCODED}`);
+    expect(body).toContain(V1_INVITE_ENCODED);
+  });
+
+  it("GET /i/<invalid-payload> falls back to the invalid-link page with 404", async () => {
+    const res = await get("/i/not-an-invite");
+    expect(res.status).toBe(404);
+    const body = await res.text();
+    expect(body).toContain("isn't valid");
+  });
+
+  it("GET /i/<truncated-payload> falls back to the invalid-link page with 404", async () => {
+    const res = await get(`/i/${V1_INVITE_ENCODED.slice(0, -20)}`);
     expect(res.status).toBe(404);
     const body = await res.text();
     expect(body).toContain("isn't valid");

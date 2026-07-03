@@ -1,4 +1,4 @@
-import { appScheme, sessionFingerprint } from "./links";
+import { appScheme, inviteAppScheme, sessionFingerprint, type InviteHeader } from "./links";
 
 const FONTS =
   '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
@@ -55,7 +55,7 @@ function shell(title: string, body: string): string {
 <body><div class="wrap">${body}</div></body></html>`;
 }
 
-const header =
+const brandHeader =
   '<div class="brand"><span class="prompt">&rsaquo;</span>azula<span class="cursor"></span></div>' +
   '<div class="tag">p2p over iroh</div>';
 
@@ -67,7 +67,7 @@ const STORE_BTNS =
 export function landingPage(): string {
   return shell(
     "azula — peer to peer",
-    `${header}
+    `${brandHeader}
     <div class="hero">
       <h1>Your peer, your shell, your LLM —<br>direct and end-to-end encrypted.</h1>
       <p>azula links two devices straight to each other over <a href="https://iroh.computer">iroh</a>:
@@ -101,7 +101,7 @@ export function invitePage(token: string | null): string {
   if (!token) {
     return shell(
       "azula — invalid link",
-      `${header}
+      `${brandHeader}
       <div class="sec center">
         <h2>That invite link isn't valid</h2>
         <p>Ask for a fresh code, or open the azula app and paste it in.</p>
@@ -113,7 +113,7 @@ export function invitePage(token: string | null): string {
   const fp = sessionFingerprint(token);
   return shell(
     "azula — join session",
-    `${header}
+    `${brandHeader}
     <div class="sec">
       <h2>Join an azula session</h2>
       <p>Opening the app… if nothing happens, it isn't installed yet.</p>
@@ -134,10 +134,72 @@ export function invitePage(token: string | null): string {
   );
 }
 
+export function invitePageV2(payload: string, header: InviteHeader): string {
+  const scheme = inviteAppScheme(payload);
+  const badges: string[] = [];
+  if (header.signed) {
+    badges.push('<span class="pill">✓ signed</span>');
+  }
+  if (header.singleUse) {
+    badges.push('<span class="pill">⚡ single-use</span>');
+  }
+  const expiryFallback =
+    header.expiresAt === 0 ? "no expiry" : header.expiresAt * 1000 < Date.now() ? "expired" : "calculating…";
+  return shell(
+    "azula — accept invite",
+    `${brandHeader}
+    <div class="sec">
+      <h2>Accept an azula invite</h2>
+      <p>Opening the app… if nothing happens, it isn't installed yet.</p>
+      <div class="codebox"><span class="k">invite</span><span>${header.inviteId}</span></div>
+      <div class="btns" style="margin-top:2px">
+        ${badges.join("")}
+        <span class="pill" id="expiry">${expiryFallback}</span>
+      </div>
+      <div class="btns">
+        <a class="btn primary" href="${scheme}">Open in azula</a>
+      </div>
+      <p style="margin-top:18px;color:var(--dim);font-size:13.5px">Don't have azula?</p>
+      <div class="btns">${STORE_BTNS}</div>
+      <p style="margin-top:18px;color:var(--faint);font-size:12.5px">
+        Signed invites are verified by the app when you connect — this page does not verify the
+        signature (that's planned future work).
+      </p>
+      <p style="margin-top:12px;color:var(--faint);font-size:12.5px">Or open azula and paste this invite:</p>
+      <div class="codebox"><span style="font:12px 'JetBrains Mono';color:var(--t1)">${escapeHtml(payload)}</span></div>
+    </div>
+    <script>
+      // Try the custom scheme; the universal/app link already covers installed apps.
+      setTimeout(function(){ window.location.href = ${JSON.stringify(scheme)}; }, 200);
+      (function(){
+        var el = document.getElementById('expiry');
+        var expiresAt = ${JSON.stringify(header.expiresAt)};
+        if (!el || expiresAt === 0) return;
+        function fmt(){
+          var now = Math.floor(Date.now() / 1000);
+          var diff = expiresAt - now;
+          if (diff <= 0) { el.textContent = 'expired'; return; }
+          var d = Math.floor(diff / 86400), h = Math.floor(diff % 86400 / 3600),
+              m = Math.floor(diff % 3600 / 60), s = Math.floor(diff % 60);
+          var parts = [];
+          if (d) parts.push(d + 'd');
+          if (h || d) parts.push(h + 'h');
+          if (m || h || d) parts.push(m + 'm');
+          parts.push(s + 's');
+          el.textContent = 'expires in ' + parts.join(' ');
+        }
+        fmt();
+        setInterval(fmt, 1000);
+      })();
+    </script>
+    <footer>azula · <a href="https://azula.app">azula.app</a></footer>`,
+  );
+}
+
 export function notFoundPage(): string {
   return shell(
     "azula — not found",
-    `${header}<div class="sec center"><h2>404</h2><p>Nothing here. <a href="/">Go home</a >.</p></div>`,
+    `${brandHeader}<div class="sec center"><h2>404</h2><p>Nothing here. <a href="/">Go home</a >.</p></div>`,
   );
 }
 

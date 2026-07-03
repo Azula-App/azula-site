@@ -1,0 +1,103 @@
+import { describe, expect, it } from "vitest";
+import worker, { type Env } from "./index";
+
+const env = {} as Env;
+
+async function get(path: string, init?: RequestInit): Promise<Response> {
+  return worker.fetch(new Request(`https://azula.app${path}`, init), env);
+}
+
+describe("routing", () => {
+  it("GET / returns the landing page", async () => {
+    const res = await get("/");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/html");
+    const body = await res.text();
+    expect(body).toContain("<!doctype html>");
+    expect(body).toContain("azula");
+  });
+
+  it("GET /health returns ok", async () => {
+    const res = await get("/health");
+    expect(res.status).toBe(200);
+    expect(await res.text()).toBe("ok");
+  });
+
+  it("GET /s/<valid-token> returns 200 with the invite page, token, and appScheme link", async () => {
+    const token = "abcdefgh12345";
+    const res = await get(`/s/${token}`);
+    expect(res.status).toBe(200);
+    const body = await res.text();
+    expect(body).toContain(token);
+    expect(body).toContain(`azula://connect?code=${token}`);
+  });
+
+  it("GET /connect/<token> behaves the same as /s/<token>", async () => {
+    const token = "abcdefgh12345";
+    const [sRes, connectRes] = await Promise.all([get(`/s/${token}`), get(`/connect/${token}`)]);
+    expect(connectRes.status).toBe(sRes.status);
+    expect(await connectRes.text()).toBe(await sRes.text());
+  });
+
+  it("GET /s/<invalid-token> falls back to the invalid-link page with 404", async () => {
+    // "a" is below the 6-char minimum enforced by isValidToken.
+    const res = await get("/s/a");
+    expect(res.status).toBe(404);
+    const body = await res.text();
+    expect(body).toContain("isn't valid");
+  });
+
+  it("GET /mcp returns the JSON placeholder", async () => {
+    const res = await get("/mcp");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("application/json");
+    const data = (await res.json()) as Record<string, unknown>;
+    expect(data).toMatchObject({ service: "azula-mcp", transport: "streamable-http", status: "placeholder" });
+    expect(data).not.toHaveProperty("note");
+  });
+
+  it("POST /mcp returns a 501 JSON-RPC error", async () => {
+    const res = await get("/mcp", { method: "POST" });
+    expect(res.status).toBe(501);
+    const data = (await res.json()) as Record<string, unknown>;
+    expect(data).toMatchObject({ jsonrpc: "2.0", id: null, error: { code: -32601 } });
+  });
+
+  it("GET /mcp/<token> includes the deprecation note", async () => {
+    const res = await get("/mcp/sometoken");
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as { note: string };
+    expect(data.note).toMatch(/deprecated/);
+  });
+
+  it("GET /unknown/path returns 404", async () => {
+    const res = await get("/unknown/path");
+    expect(res.status).toBe(404);
+    const body = await res.text();
+    expect(body).toContain("404");
+  });
+
+  it("sets security headers on HTML responses", async () => {
+    const res = await get("/");
+    expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(res.headers.get("referrer-policy")).toBe("strict-origin-when-cross-origin");
+  });
+
+  it("serves the apple-app-site-association file as application/json", async () => {
+    const res = await get("/.well-known/apple-app-site-association");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("application/json");
+    const data = (await res.json()) as any;
+    expect(data.applinks.details[0].components).toEqual(
+      expect.arrayContaining([expect.objectContaining({ "/": "/s/*" })]),
+    );
+  });
+
+  it("serves assetlinks.json as application/json", async () => {
+    const res = await get("/.well-known/assetlinks.json");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("application/json");
+    const data = await res.json();
+    expect(Array.isArray(data)).toBe(true);
+  });
+});

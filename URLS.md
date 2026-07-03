@@ -45,8 +45,11 @@ invite page's JS and registered by both apps).
 3. Pair a device by giving azula its session link: either the **`connect`** tool
    (paste `https://azula.app/s/<token>` in chat) or **`azula pair <url>`**. The
    bridge parses the token, dials the app on the `azula/llm/0` ALPN, and exposes
-   `connect` / `list_devices` / `send_message` / `get_messages` / `disconnect`.
-   One bridge holds **multiple devices** at once, addressed by name.
+   12 MCP tools (`connect`, `list_devices`, `send_message`, `get_messages`,
+   `wait_for_reply`, `set_name`, `say`, `render_ui`, `update_ui`, `delete_ui`,
+   `start_pairing`, `disconnect`) — see the canonical catalog in
+   `azula-docs/docs/mcp-bridge.md`. One bridge holds **multiple devices** at
+   once, addressed by name.
 
 ### Device registry (state files the LLM knows about)
 

@@ -62,7 +62,7 @@ export default {
     // this endpoint once in an MCP client, then pair a device by giving azula
     // its session link (the `connect` tool or `azula pair <url>`). The actual
     // MCP↔iroh bridge is `azula serve-mcp` (Workers can't speak iroh) — see
-    // site/URLS.md. A token path is accepted but ignored, with a deprecation note.
+    // URLS.md (repo root). A token path is accepted but ignored, with a deprecation note.
     if (path === "/mcp" || path.startsWith("/mcp/")) {
       if (request.method === "POST") {
         return json(
@@ -85,7 +85,7 @@ export default {
         message:
           "Configure this MCP endpoint once in your LLM client, then pair an Azula device by giving " +
           "azula its session link (azula.app/s/<code>) via the connect tool or `azula pair`. The " +
-          "MCP↔iroh bridge is `azula serve-mcp` — see the repo's site/URLS.md.",
+          "MCP↔iroh bridge is `azula serve-mcp` — see the azula-site repo's URLS.md.",
       });
     }
 

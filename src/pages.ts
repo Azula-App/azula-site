@@ -1,8 +1,8 @@
 import { appScheme, inviteAppScheme, sessionFingerprint, type InviteHeader } from "./links";
 
-const FONTS =
-  '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
-  '<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">';
+// No webfont <link> on purpose: the pages must not make third-party requests, so
+// that /privacy can say the site loads nothing but itself. Both families are used
+// when installed locally and fall back to system stacks otherwise (--sans/--mono).
 
 const ICONS =
   '<link rel="icon" type="image/svg+xml" href="/favicon.svg">' +
@@ -10,22 +10,24 @@ const ICONS =
 
 const STYLE = `
   :root{--pink:#ff2d9b;--pink2:#ff6ec7;--green:#52c98a;--bg0:#070709;--bg1:#0a0a10;--bg2:#0c0c13;
-    --line:#1d1d26;--line2:#23232e;--t0:#f0f0f6;--t1:#d6d6e0;--dim:#8a8a9a;--faint:#6a6a7a}
+    --line:#1d1d26;--line2:#23232e;--t0:#f0f0f6;--t1:#d6d6e0;--dim:#8a8a9a;--faint:#6a6a7a;
+    --sans:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   *{box-sizing:border-box}
   body{margin:0;background:radial-gradient(120% 80% at 50% -10%,#120a18,var(--bg0));color:var(--t1);
-    font:15px/1.6 'Space Grotesk',system-ui,sans-serif;min-height:100vh}
+    font:15px/1.6 var(--sans);min-height:100vh}
   a{color:var(--pink2);text-decoration:none}
   .wrap{max-width:880px;margin:0 auto;padding:48px 22px 64px}
-  .brand{font:700 30px 'JetBrains Mono';color:var(--pink);text-shadow:0 0 16px rgba(255,45,155,.4);letter-spacing:-1px}
+  .brand{font:700 30px var(--mono);color:var(--pink);text-shadow:0 0 16px rgba(255,45,155,.4);letter-spacing:-1px}
   .brand .prompt{color:var(--green);margin-right:9px;text-shadow:0 0 12px rgba(82,201,138,.4)}
   .brand .cursor{display:inline-block;width:11px;height:24px;margin-left:7px;vertical-align:-3px;
     background:var(--pink);box-shadow:0 0 10px rgba(255,45,155,.55);animation:blink 1.05s steps(1) infinite}
   @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
-  .tag{font:12px 'JetBrains Mono';color:var(--faint);margin-top:2px;letter-spacing:1px}
+  .tag{font:12px var(--mono);color:var(--faint);margin-top:2px;letter-spacing:1px}
   .hero{margin-top:40px}
-  .hero h1{font:700 40px/1.15 'Space Grotesk';color:var(--t0);margin:0 0 14px}
+  .hero h1{font:700 40px/1.15 var(--sans);color:var(--t0);margin:0 0 14px}
   .hero p{font-size:17px;color:var(--t1);max-width:620px}
-  .pill{display:inline-flex;align-items:center;gap:7px;font:11px 'JetBrains Mono';color:var(--green);
+  .pill{display:inline-flex;align-items:center;gap:7px;font:11px var(--mono);color:var(--green);
     border:1px solid var(--line2);border-radius:999px;padding:5px 11px;margin-top:18px}
   .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
   .btn{display:inline-block;padding:12px 18px;border-radius:11px;font-weight:600;font-size:14px}
@@ -35,23 +37,37 @@ const STYLE = `
   .card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:18px}
   .card h3{margin:0 0 6px;font-size:16px;color:var(--t0)}
   .card p{margin:0;font-size:13.5px;color:var(--dim)}
-  .glyph{font:18px 'JetBrains Mono';color:var(--pink2);margin-bottom:8px}
+  .glyph{font:18px var(--mono);color:var(--pink2);margin-bottom:8px}
   .sec{margin-top:48px}
   .sec h2{font-size:20px;color:var(--t0)}
-  code{font:13px 'JetBrains Mono';background:#1a1a23;border:1px solid var(--line2);border-radius:5px;padding:2px 6px;color:var(--pink2)}
+  code{font:13px var(--mono);background:#1a1a23;border:1px solid var(--line2);border-radius:5px;padding:2px 6px;color:var(--pink2)}
   pre{background:var(--bg0);border:1px solid var(--line2);border-radius:10px;padding:14px;overflow:auto}
   pre code{background:none;border:none;padding:0;color:#cdd6e0;font-size:12.5px}
   .codebox{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--line2);
     border-radius:11px;padding:13px 15px;margin-top:18px;word-break:break-all}
-  .codebox .k{font:13px 'JetBrains Mono';color:var(--pink2)}
-  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font:12px 'JetBrains Mono';color:var(--faint)}
+  .codebox .k{font:13px var(--mono);color:var(--pink2)}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font:12px var(--mono);color:var(--faint)}
+  footer a{color:var(--dim)}
   .center{text-align:center}
+  /* privacy page */
+  .prose{max-width:660px}
+  .prose p,.prose li{color:var(--t1)}
+  .prose ul{padding-left:18px;margin:12px 0}
+  .prose li{margin:7px 0}
+  .prose li b,.prose p b{color:var(--t0);font-weight:600}
+  .lede{font-size:17px;color:var(--t0)}
+  .tbl{width:100%;max-width:660px;border-collapse:collapse;margin-top:16px;font-size:13.5px}
+  .tbl th{font:11px var(--mono);text-transform:uppercase;letter-spacing:.6px;color:var(--faint)}
+  .tbl th,.tbl td{text-align:left;padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  .tbl td:first-child{color:var(--t0);white-space:nowrap;padding-right:18px}
+  .tbl td{color:var(--dim)}
+  .updated{margin-top:30px;font:12px var(--mono);color:var(--faint)}
 `;
 
 function shell(title: string, body: string): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title}</title><meta name="theme-color" content="#070709">${ICONS}${FONTS}<style>${STYLE}</style></head>
+<title>${title}</title><meta name="theme-color" content="#070709">${ICONS}<style>${STYLE}</style></head>
 <body><div class="wrap">${body}</div></body></html>`;
 }
 
@@ -93,7 +109,7 @@ export function landingPage(): string {
       <pre><code>https://azula.app/s/&lt;your-session-code&gt;</code></pre>
     </div>
 
-    <footer>azula · peer-to-peer over iroh · <a href="https://azula.app">azula.app</a></footer>`,
+    <footer>azula · peer-to-peer over iroh · <a href="https://azula.app">azula.app</a> · <a href="/privacy">privacy</a></footer>`,
   );
 }
 
@@ -193,6 +209,136 @@ export function invitePageV2(payload: string, header: InviteHeader): string {
       })();
     </script>
     <footer>azula · <a href="https://azula.app">azula.app</a></footer>`,
+  );
+}
+
+// Everything on this page is a factual claim about the shipped code — keep it that
+// way. If the app ever gains telemetry, a backend, cloud sync, remote push, or a
+// third-party SDK, this page is wrong until it's updated. `PRIVACY_UPDATED` is the
+// date the wording last changed; bump it whenever the substance does.
+const PRIVACY_UPDATED = "13 July 2026";
+const PRIVACY_CONTACT = "privacy@azula.app";
+
+export function privacyPage(): string {
+  return shell(
+    "azula — privacy",
+    `${brandHeader}
+    <div class="hero">
+      <h1>Privacy</h1>
+      <p class="lede">azula has no accounts and no servers that hold your data. Your identity, your
+      messages and your peer list live on your device, and messages go straight to the other device,
+      end-to-end encrypted.</p>
+    </div>
+
+    <div class="sec prose">
+      <p>That is the whole policy. The rest of this page is the detail — including the few places
+      where something other than your device is unavoidably involved. We would rather name those than
+      claim a tidy zero.</p>
+    </div>
+
+    <div class="sec prose">
+      <h2>What we collect</h2>
+      <p>Nothing. Concretely, azula has:</p>
+      <ul>
+        <li><b>no account</b> — no sign-up, no email address, no phone number, no username;</li>
+        <li><b>no analytics, telemetry, crash reporting or attribution SDK</b> — not in the app, not
+        in the CLI, not on this website;</li>
+        <li><b>no cookies</b>, no tracking pixels, no ads, no data brokers;</li>
+        <li><b>no database</b>. We run no server that stores your messages, contacts or keys, because
+        we run no server that stores anything at all.</li>
+      </ul>
+      <p>We cannot hand over your messages, close your account, or tell anyone who you talked to. We
+      never had any of it.</p>
+    </div>
+
+    <div class="sec prose">
+      <h2>Your identity</h2>
+      <p>Your identity is a keypair generated on your device the first time you open azula. The public
+      half is your node id — the code you hand to a peer. The private half never leaves the device.
+      The optional 24-word recovery phrase is that same private key encoded so you can write it down;
+      it is never transmitted and we never see it.</p>
+      <p>Where the key is kept depends on the platform: the <b>Android Keystore</b> on Android and the
+      <b>Keychain</b> on iOS and macOS, both encrypted at rest. On Linux and Windows desktop — and for
+      the CLI's own long-lived identities — it is currently a plain file under <code>~/.azula/</code>.
+      That one is not encrypted at rest, so treat it like an SSH private key.</p>
+    </div>
+
+    <div class="sec prose">
+      <h2>Your data stays on your device</h2>
+      <p>Messages, profiles, peers, invitations, settings and received media are written to local
+      storage on the device that received them. Nothing syncs to a cloud, because there is no cloud.
+      Uninstalling the app deletes it.</p>
+      <p>One caveat we do not control: <b>your operating system's own backup</b> — Android's automatic
+      backup, or an iCloud/local backup on iOS — can sweep up app data along with everything else on
+      your phone. azula never sends that data anywhere, but if you want no copy to exist off the
+      device at all, exclude azula in your device's backup settings.</p>
+    </div>
+
+    <div class="sec prose">
+      <h2>How messages travel</h2>
+      <p>azula connects two devices directly over <a href="https://iroh.computer">iroh</a>: a
+      hole-punched QUIC link, encrypted end to end. The keys are on the two devices, so nothing in
+      between can read what you send — not us, not a relay, not an ISP.</p>
+      <p>Two parts of that connection do involve infrastructure run by <b>n0</b>, the team behind iroh:</p>
+      <ul>
+        <li><b>Discovery.</b> So that a peer can find you, your node id and current address are
+        published by default to n0's DNS/pkarr discovery service. This happens whether or not you ever
+        connect to anyone.</li>
+        <li><b>Relays.</b> When a direct hole-punch fails — a strict NAT, a hostile network — the
+        encrypted packets are forwarded through n0's relay servers instead. They relay ciphertext and
+        cannot read your messages, but they do see connection metadata: which node ids are talking,
+        when, how much, and from which IP address.</li>
+      </ul>
+      <p>So: your content, never. Metadata, sometimes, to n0. iroh supports custom relays and turning
+      discovery off; azula does not expose those as settings yet.</p>
+    </div>
+
+    <div class="sec prose">
+      <h2>This website</h2>
+      <p>azula.app is a Cloudflare Worker that renders static pages. No cookies, no analytics, no
+      database, no fonts or scripts from anyone else — a page here loads nothing but itself.</p>
+      <p>The part worth knowing: an invite link carries your invite code <i>in the URL</i>
+      (<code>azula.app/i/&lt;code&gt;</code>). When the app is installed the link opens it directly and
+      this site is never involved. But if such a link is opened in a browser, that URL — code included
+      — passes through Cloudflare, our host, and lands in its standard request logs. An invite code is
+      a bearer credential: whoever holds it can dial your device. Treat invite links like passwords,
+      prefer single-use invites with an expiry, and don't post them in public.</p>
+    </div>
+
+    <div class="sec prose">
+      <h2>If you connect an LLM</h2>
+      <p>azula can bridge an MCP-capable LLM into a session. If you set that up, everything you route
+      through the bridge — the messages it sends and reads on your behalf — goes to whichever LLM
+      provider you configured, and their privacy policy governs it from there. That is your endpoint
+      and your choice; the bridge runs on your own machine and sends nothing anywhere else.</p>
+    </div>
+
+    <div class="sec prose">
+      <h2>Everyone who is involved</h2>
+      <table class="tbl">
+        <tr><th>Who</th><th>Why</th><th>What they can see</th></tr>
+        <tr><td>n0 (iroh)</td><td>Peer discovery, and relaying when a direct link fails</td>
+          <td>Connection metadata — node ids, IP addresses, timing, volume. Never message content.</td></tr>
+        <tr><td>Cloudflare</td><td>Hosts azula.app</td>
+          <td>Standard web request logs for pages served here, including the URL path — which for an
+          invite link contains the invite code.</td></tr>
+        <tr><td>Your LLM provider</td><td>Only if you connect one yourself</td>
+          <td>Whatever you route through the MCP bridge.</td></tr>
+      </table>
+      <p style="margin-top:16px">That is the complete list. There is no analytics vendor, ad network
+      or data broker to add to it.</p>
+    </div>
+
+    <div class="sec prose">
+      <h2>Changes, and how to reach us</h2>
+      <p>If any of this changes, this page changes with it. We have no account to email you about and
+      no mailing list to put you on, so this page is the notice — the date below tells you when it
+      last moved.</p>
+      <p>Questions: <a href="mailto:${PRIVACY_CONTACT}">${PRIVACY_CONTACT}</a>.</p>
+      <p class="updated">Last updated ${PRIVACY_UPDATED}</p>
+    </div>
+
+    <footer>azula · peer-to-peer over iroh · <a href="/">azula.app</a></footer>`,
   );
 }
 

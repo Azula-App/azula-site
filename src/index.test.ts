@@ -22,6 +22,19 @@ describe("routing", () => {
     expect(body).toContain("azula");
   });
 
+  it("GET /privacy returns the privacy policy", async () => {
+    const res = await get("/privacy");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/html");
+    const body = await res.text();
+    expect(body).toContain("no accounts and no servers that hold your data");
+  });
+
+  it("links the privacy policy from the landing page", async () => {
+    const body = await (await get("/")).text();
+    expect(body).toContain('href="/privacy"');
+  });
+
   it("GET /health returns ok", async () => {
     const res = await get("/health");
     expect(res.status).toBe(200);

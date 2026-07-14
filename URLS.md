@@ -42,6 +42,7 @@ share links should use `/i/`.
 | URL | Purpose |
 |-----|---------|
 | `https://azula.app/` | Landing page |
+| `https://azula.app/privacy` | Privacy policy (`privacyPage` in `src/pages.ts`), linked from the landing footer. Every line is a claim about the shipped code — see the note below. |
 | `https://azula.app/i/<encoded>` | **Invite (v2)** — universal/app link. See above. |
 | `https://azula.app/s/<token>` | *Legacy* session invite — universal/app link. Opens the app to that session; falls back to a web page with the code + store links. `/connect/<token>` is an alias. Legacy-supported, not the canonical share format anymore. |
 | `https://azula.app/mcp` | **MCP endpoint** — *static*; configured once in an LLM client. Sessions are not in the URL; you pair devices via the `connect` tool / `azula pair`. (A `/mcp/<token>` path is accepted but the token is ignored, with a deprecation note.) |
@@ -51,6 +52,39 @@ share links should use `/i/`.
 Custom-scheme fallbacks: `azula://i?c=<encoded>` (current) and
 `azula://connect?code=<token>` (legacy, used by the `/s/` invite page's JS and
 registered by both apps).
+
+## Deploying
+
+**azula.app updates itself from git.** The Worker is wired to this repo through
+Cloudflare's Git integration (Workers Builds), so merging to `main` builds and
+deploys automatically — you do not need to run `wrangler deploy` by hand, and a
+manual deploy is only for out-of-band situations. The deploy config lives on the
+Cloudflare dashboard, not in `.github/workflows/` (CI here only runs typecheck +
+tests).
+
+Practical consequence: **anything merged to `main` is live on the public site.**
+That matters most for `/privacy` below — an edit to that page is a change to a
+public legal claim the moment it lands, not when someone remembers to deploy.
+
+## Privacy policy (`/privacy`)
+
+`privacyPage()` in `src/pages.ts` is **not boilerplate** — it is a set of factual
+claims about what the shipped code does, and it is the URL the App Store / Play
+listings will point at. It currently asserts: no accounts, no analytics or crash
+reporting anywhere, no backend storage, keys and messages local to the device,
+and end-to-end encrypted transport. It also discloses the things that *do* leave
+the device — n0's iroh relays + DNS/pkarr discovery (connection metadata, never
+content), Cloudflare's request logs (invite codes ride in the URL path), OS-level
+backups, the plaintext key file on Linux/Windows desktop, and any LLM provider the
+user wires up themselves.
+
+**This page goes stale silently.** Anything that adds a telemetry/crash SDK, a
+backend, cloud sync, remote push (FCM/APNs), or a third-party resource on this
+site makes it false. If you do any of those, update the page and bump
+`PRIVACY_UPDATED`. The tests in `src/pages.test.ts` pin each disclosure, and one
+asserts no page loads an off-origin `<link>`/`<script>`/`<img>` — the site
+deliberately ships **no webfonts** (system font stacks instead) so that the
+"loads nothing but itself" claim holds.
 
 ## Flow A — link a person (peer chat)
 

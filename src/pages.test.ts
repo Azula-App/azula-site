@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { invitePage, invitePageV2, landingPage, notFoundPage } from "./pages";
+import { invitePage, invitePageV2, landingPage, notFoundPage, privacyPage } from "./pages";
 import type { InviteHeader } from "./links";
 
 const V1_PAYLOAD =
@@ -64,6 +64,74 @@ describe("invitePage", () => {
 describe("notFoundPage", () => {
   it("renders a 404 page", () => {
     expect(notFoundPage()).toContain("404");
+  });
+});
+
+describe("privacyPage", () => {
+  it("states the headline claim: no accounts, no servers holding your data", () => {
+    const page = privacyPage();
+    expect(page).toContain("no accounts and no servers that hold your data");
+    expect(page).toContain("no analytics, telemetry, crash reporting or attribution SDK");
+  });
+
+  // The disclosures below are the ones that keep the page honest — the audit found
+  // each of these is a real way something leaves the device. A change that drops one
+  // turns this page into a false claim, so they're pinned here on purpose.
+  it("discloses the n0 relay + discovery metadata path", () => {
+    const page = privacyPage();
+    expect(page).toContain("discovery service");
+    expect(page).toContain("relay servers");
+    expect(page).toMatch(/cannot read your messages/);
+    expect(page).toContain("node ids are talking");
+  });
+
+  it("discloses that invite codes travel in the URL and reach Cloudflare's request logs", () => {
+    const page = privacyPage();
+    expect(page).toContain("Cloudflare");
+    expect(page).toContain("request logs");
+    expect(page).toContain("bearer credential");
+  });
+
+  it("discloses OS backups and the plaintext desktop key file", () => {
+    const page = privacyPage();
+    expect(page).toMatch(/operating system's own backup/);
+    expect(page).toContain("not encrypted at rest");
+  });
+
+  it("discloses that a user-configured LLM provider sees what is routed to it", () => {
+    const page = privacyPage();
+    expect(page).toContain("LLM provider");
+    expect(page).toContain("MCP bridge");
+  });
+
+  it("publishes a privacy contact and a last-updated date", () => {
+    const page = privacyPage();
+    expect(page).toContain("mailto:privacy@azula.app");
+    expect(page).toMatch(/Last updated \d{1,2} \w+ \d{4}/);
+  });
+});
+
+// The privacy page claims "a page here loads nothing but itself". That is only true
+// while no page pulls in a third-party resource, so assert it for every page rather
+// than trusting the claim.
+describe("no third-party resource loads", () => {
+  const pages: Array<[string, string]> = [
+    ["landingPage", landingPage()],
+    ["privacyPage", privacyPage()],
+    ["invitePage", invitePage("abcdefgh12345")],
+    ["invitePage (invalid)", invitePage(null)],
+    ["invitePageV2", invitePageV2(V1_PAYLOAD, V2_HEADER)],
+    ["notFoundPage", notFoundPage()],
+  ];
+
+  it.each(pages)("%s loads no external fonts, scripts, or stylesheets", (_name, page) => {
+    expect(page).not.toContain("fonts.googleapis.com");
+    expect(page).not.toContain("fonts.gstatic.com");
+    // Any src=/href= pointing off-origin, other than plain hyperlinks (<a href>).
+    const tags = page.match(/<(?:link|script|img|iframe)\b[^>]*>/g) ?? [];
+    for (const tag of tags) {
+      expect(tag).not.toMatch(/(?:href|src)\s*=\s*["']?(?:https?:)?\/\//);
+    }
   });
 });
 

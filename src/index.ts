@@ -1,4 +1,4 @@
-import { invitePage, invitePageV2, landingPage, notFoundPage } from "./pages";
+import { invitePage, invitePageV2, landingPage, notFoundPage, privacyPage } from "./pages";
 import { decodeInviteHeader, isValidToken } from "./links";
 import { appleAppSiteAssociation, assetLinks } from "./wellknown";
 import { APPLE_TOUCH_PNG_B64, FAVICON_SVG, b64ToBytes } from "./icon";
@@ -31,6 +31,7 @@ export default {
     const path = url.pathname;
 
     if (path === "/" || path === "") return html(landingPage());
+    if (path === "/privacy") return html(privacyPage());
     if (path === "/health") return new Response("ok", { headers: SECURITY_HEADERS });
 
     // Brand icons (see icon.ts).

@@ -1,13 +1,12 @@
-// Deeplink association files. The PLACEHOLDER values below must be filled with
-// the real signing identities once the apps are signed — see docs/deeplinks.md.
+// Deeplink association files — see docs/deeplinks.md.
 
 // iOS Apple App Site Association. appIDs are "<TeamID>.<bundleIdentifier>".
 const IOS_APP_ID = "EB8N37743E.app.azula"; // Apple Team ID EB8N37743E + bundle id app.azula
 
-// Android App Links. The fingerprint is the SHA-256 of the *release* signing
-// cert (or the Play App Signing cert from the Play Console).
+// Android App Links. This is the Play **App Signing** cert SHA-256 (from Play
+// Console → App signing), NOT the upload cert — Play re-signs the AAB with it.
 const ANDROID_PACKAGE = "app.azula";
-const ANDROID_SHA256 = "REPLACE_WITH_RELEASE_SHA256_FINGERPRINT"; // PLACEHOLDER
+const ANDROID_SHA256 = "84:94:45:9D:9B:DE:72:6D:E1:B7:ED:50:C5:0D:F4:76:CE:45:F2:39:7E:3C:E3:10:E4:A5:90:93:E2:F6:78:98";
 
 export function appleAppSiteAssociation(): unknown {
   return {

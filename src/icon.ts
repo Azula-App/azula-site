@@ -6,7 +6,11 @@
 export const FAVICON_SVG = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Favicon source. generate.sh bakes the glyphs to paths (browsers don't load
      JetBrains Mono for a favicon) → out/web/favicon.svg. Compact, minimal glow,
-     tuned to read at 16-32px. -->
+     tuned to read at 16-32px.
+
+     Colors below are literal (SVG attrs can't reference CSS custom properties):
+     #070709 = --bg, #52c98a = --success, #ff2d9b = --primary. Keep in sync with
+     azula-docs/docs/design-system.md §3 and the STYLE :root in ./pages.ts. -->
 
 <svg
    width="64"

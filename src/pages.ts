@@ -9,65 +9,71 @@ const ICONS =
   '<link rel="apple-touch-icon" href="/apple-touch-icon.png">';
 
 const STYLE = `
-  :root{--pink:#ff2d9b;--pink2:#ff6ec7;--green:#52c98a;--bg0:#070709;--bg1:#0a0a10;--bg2:#0c0c13;
-    --line:#1d1d26;--line2:#23232e;--t0:#f0f0f6;--t1:#d6d6e0;--dim:#8a8a9a;--faint:#6a6a7a;
+  :root{--primary:#ff2d9b;--primary-light:#ff6ec7;--primary-dark:#c4156e;--primary-edge:rgba(255,45,155,.4);
+    --success:#52c98a;--warning:#ffd23f;--danger:#ff6b6b;--accent:#3fc8ff;
+    --bg:#070709;--bg-wash:#120a18;--surface-subtle:#0c0c13;--surface-code:#1a1a23;
+    --outline-subtle:#1d1d26;--outline-soft:#23232e;
+    --content-strong:#f0f0f6;--content:#d6d6e0;--content-code:#cdd6e0;--content-dim:#8a8a9a;--content-faint:#6a6a7a;
     --sans:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
     --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   *{box-sizing:border-box}
-  body{margin:0;background:radial-gradient(120% 80% at 50% -10%,#120a18,var(--bg0));color:var(--t1);
+  body{margin:0;background:radial-gradient(120% 80% at 50% -10%,var(--bg-wash),var(--bg));color:var(--content);
     font:15px/1.6 var(--sans);min-height:100vh}
-  a{color:var(--pink2);text-decoration:none}
+  a{color:var(--primary-light);text-decoration:none}
+  :focus-visible{outline:2px solid var(--primary-edge);outline-offset:2px;border-radius:10px}
   .wrap{max-width:880px;margin:0 auto;padding:48px 22px 64px}
-  .brand{font:700 30px var(--mono);color:var(--pink);text-shadow:0 0 16px rgba(255,45,155,.4);letter-spacing:-1px}
-  .brand .prompt{color:var(--green);margin-right:9px;text-shadow:0 0 12px rgba(82,201,138,.4)}
+  .brand{font:700 30px var(--mono);color:var(--primary);text-shadow:0 0 16px rgba(255,45,155,.4);letter-spacing:-1px}
+  .brand .prompt{color:var(--success);margin-right:9px;text-shadow:0 0 12px rgba(82,201,138,.4)}
   .brand .cursor{display:inline-block;width:11px;height:24px;margin-left:7px;vertical-align:-3px;
-    background:var(--pink);box-shadow:0 0 10px rgba(255,45,155,.55);animation:blink 1.05s steps(1) infinite}
+    background:var(--primary);box-shadow:0 0 10px rgba(255,45,155,.55);animation:blink 1.05s steps(1) infinite}
   @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
-  .tag{font:12px var(--mono);color:var(--faint);margin-top:2px;letter-spacing:1px}
+  @media (prefers-reduced-motion: reduce){.brand .cursor{animation:none;opacity:1}}
+  .tag{font:12px var(--mono);color:var(--content-faint);margin-top:2px;letter-spacing:1px}
   .hero{margin-top:40px}
-  .hero h1{font:700 40px/1.15 var(--sans);color:var(--t0);margin:0 0 14px}
-  .hero p{font-size:17px;color:var(--t1);max-width:620px}
-  .pill{display:inline-flex;align-items:center;gap:7px;font:11px var(--mono);color:var(--green);
-    border:1px solid var(--line2);border-radius:999px;padding:5px 11px;margin-top:18px}
+  .hero h1{font:700 40px/1.15 var(--sans);color:var(--content-strong);margin:0 0 14px}
+  .hero p{font-size:17px;color:var(--content);max-width:620px}
+  .pill{display:inline-flex;align-items:center;gap:7px;font:11px var(--mono);color:var(--success);
+    border:1px solid var(--outline-soft);border-radius:999px;padding:5px 11px;margin-top:18px}
   .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
   .btn{display:inline-block;padding:12px 18px;border-radius:11px;font-weight:600;font-size:14px}
-  .btn.primary{background:linear-gradient(135deg,var(--pink),#c4156e);color:#fff;box-shadow:0 0 18px rgba(255,45,155,.4)}
-  .btn.ghost{border:1px solid var(--line2);color:var(--t1)}
+  .btn.primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 0 18px rgba(255,45,155,.4)}
+  .btn.ghost{border:1px solid var(--outline-soft);color:var(--content)}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:46px}
-  .card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:18px}
-  .card h3{margin:0 0 6px;font-size:16px;color:var(--t0)}
-  .card p{margin:0;font-size:13.5px;color:var(--dim)}
-  .glyph{font:18px var(--mono);color:var(--pink2);margin-bottom:8px}
+  .card{background:var(--surface-subtle);border:1px solid var(--outline-subtle);border-radius:14px;padding:18px}
+  .card h3{margin:0 0 6px;font-size:16px;color:var(--content-strong)}
+  .card p{margin:0;font-size:13.5px;color:var(--content-dim)}
+  .glyph{font:18px var(--mono);color:var(--primary-light);margin-bottom:8px}
   .sec{margin-top:48px}
-  .sec h2{font-size:20px;color:var(--t0)}
-  code{font:13px var(--mono);background:#1a1a23;border:1px solid var(--line2);border-radius:5px;padding:2px 6px;color:var(--pink2)}
-  pre{background:var(--bg0);border:1px solid var(--line2);border-radius:10px;padding:14px;overflow:auto}
-  pre code{background:none;border:none;padding:0;color:#cdd6e0;font-size:12.5px}
-  .codebox{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--line2);
+  .sec h2{font-size:20px;color:var(--content-strong)}
+  code{font:13px var(--mono);background:var(--surface-code);border:1px solid var(--outline-soft);border-radius:5px;padding:2px 6px;color:var(--primary-light)}
+  pre{background:var(--bg);border:1px solid var(--outline-soft);border-radius:10px;padding:14px;overflow:auto}
+  pre code{background:none;border:none;padding:0;color:var(--content-code);font-size:12.5px}
+  .codebox{display:flex;align-items:center;gap:10px;background:var(--surface-subtle);border:1px solid var(--outline-soft);
     border-radius:11px;padding:13px 15px;margin-top:18px;word-break:break-all}
-  .codebox .k{font:13px var(--mono);color:var(--pink2)}
-  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font:12px var(--mono);color:var(--faint)}
-  footer a{color:var(--dim)}
+  .codebox .k{font:13px var(--mono);color:var(--primary-light)}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--outline-subtle);font:12px var(--mono);color:var(--content-faint)}
+  footer a{color:var(--content-dim)}
   .center{text-align:center}
   /* privacy page */
   .prose{max-width:660px}
-  .prose p,.prose li{color:var(--t1)}
+  .prose p,.prose li{color:var(--content)}
   .prose ul{padding-left:18px;margin:12px 0}
   .prose li{margin:7px 0}
-  .prose li b,.prose p b{color:var(--t0);font-weight:600}
-  .lede{font-size:17px;color:var(--t0)}
+  .prose li b,.prose p b{color:var(--content-strong);font-weight:600}
+  .lede{font-size:17px;color:var(--content-strong)}
   .tbl{width:100%;max-width:660px;border-collapse:collapse;margin-top:16px;font-size:13.5px}
-  .tbl th{font:11px var(--mono);text-transform:uppercase;letter-spacing:.6px;color:var(--faint)}
-  .tbl th,.tbl td{text-align:left;padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
-  .tbl td:first-child{color:var(--t0);white-space:nowrap;padding-right:18px}
-  .tbl td{color:var(--dim)}
-  .updated{margin-top:30px;font:12px var(--mono);color:var(--faint)}
+  .tbl th{font:11px var(--mono);text-transform:uppercase;letter-spacing:.6px;color:var(--content-faint)}
+  .tbl th,.tbl td{text-align:left;padding:10px 12px 10px 0;border-bottom:1px solid var(--outline-subtle);vertical-align:top}
+  .tbl td:first-child{color:var(--content-strong);white-space:nowrap;padding-right:18px}
+  .tbl td{color:var(--content-dim)}
+  .updated{margin-top:30px;font:12px var(--mono);color:var(--content-faint)}
 `;
 
 function shell(title: string, body: string): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title}</title><meta name="theme-color" content="#070709">${ICONS}<style>${STYLE}</style></head>
+<title>${title}</title><!-- theme-color is a literal: HTML attrs can't use CSS vars, must track --bg above -->
+<meta name="theme-color" content="#070709">${ICONS}<style>${STYLE}</style></head>
 <body><div class="wrap">${body}</div></body></html>`;
 }
 
@@ -137,10 +143,10 @@ export function invitePage(token: string | null): string {
       <div class="btns">
         <a class="btn primary" href="${scheme}">Open in azula</a>
       </div>
-      <p style="margin-top:18px;color:var(--dim);font-size:13.5px">Don't have azula?</p>
+      <p style="margin-top:18px;color:var(--content-dim);font-size:13.5px">Don't have azula?</p>
       <div class="btns">${STORE_BTNS}</div>
-      <p style="margin-top:18px;color:var(--faint);font-size:12.5px">Or open azula and paste this code:</p>
-      <div class="codebox"><span style="font:12px 'JetBrains Mono';color:var(--t1)">${escapeHtml(token)}</span></div>
+      <p style="margin-top:18px;color:var(--content-faint);font-size:12.5px">Or open azula and paste this code:</p>
+      <div class="codebox"><span style="font:12px var(--mono);color:var(--content)">${escapeHtml(token)}</span></div>
     </div>
     <script>
       // Try the custom scheme; the universal/app link already covers installed apps.
@@ -175,14 +181,14 @@ export function invitePageV2(payload: string, header: InviteHeader): string {
       <div class="btns">
         <a class="btn primary" href="${scheme}">Open in azula</a>
       </div>
-      <p style="margin-top:18px;color:var(--dim);font-size:13.5px">Don't have azula?</p>
+      <p style="margin-top:18px;color:var(--content-dim);font-size:13.5px">Don't have azula?</p>
       <div class="btns">${STORE_BTNS}</div>
-      <p style="margin-top:18px;color:var(--faint);font-size:12.5px">
+      <p style="margin-top:18px;color:var(--content-faint);font-size:12.5px">
         Signed invites are verified by the app when you connect — this page does not verify the
         signature (that's planned future work).
       </p>
-      <p style="margin-top:12px;color:var(--faint);font-size:12.5px">Or open azula and paste this invite:</p>
-      <div class="codebox"><span style="font:12px 'JetBrains Mono';color:var(--t1)">${escapeHtml(payload)}</span></div>
+      <p style="margin-top:12px;color:var(--content-faint);font-size:12.5px">Or open azula and paste this invite:</p>
+      <div class="codebox"><span style="font:12px var(--mono);color:var(--content)">${escapeHtml(payload)}</span></div>
     </div>
     <script>
       // Try the custom scheme; the universal/app link already covers installed apps.
@@ -345,7 +351,7 @@ export function privacyPage(): string {
 export function notFoundPage(): string {
   return shell(
     "azula — not found",
-    `${brandHeader}<div class="sec center"><h2>404</h2><p>Nothing here. <a href="/">Go home</a >.</p></div>`,
+    `${brandHeader}<div class="sec center"><h2>404</h2><p>Nothing here. <a href="/">Go home</a>.</p></div>`,
   );
 }
 

@@ -3,7 +3,7 @@ import worker, { type Env } from "./index";
 
 const env = {} as Env;
 
-// Shared cross-repo vector — see azula-docs/docs/invitations.md and links.test.ts.
+// Shared cross-repo vector — see azula-docs/openspec/specs/invitations/design.md and links.test.ts.
 // V1 — unsigned, no expiry, multi-use.
 const V1_INVITE_ENCODED =
   "aziaeaaci2fm6e2xtppnfk3saaaaaaaaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bnoruwg23foqwwe6lumvzq";

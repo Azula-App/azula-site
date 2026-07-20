@@ -60,7 +60,7 @@ export default {
       return html(invitePage(token));
     }
 
-    // Invite payload v2 (see azula-docs/docs/invitations.md). Falls back to the
+    // Invite payload v2 (see azula-docs/openspec/specs/invitations/design.md). Falls back to the
     // same invalid-link page as the legacy route when decoding fails.
     const inviteV2 = path.match(/^\/i\/(.+)$/);
     if (inviteV2) {

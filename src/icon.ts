@@ -10,7 +10,7 @@ export const FAVICON_SVG = `<?xml version="1.0" encoding="UTF-8" standalone="no"
 
      Colors below are literal (SVG attrs can't reference CSS custom properties):
      #070709 = --bg, #52c98a = --success, #ff2d9b = --primary. Keep in sync with
-     azula-docs/docs/design-system.md §3 and the STYLE :root in ./pages.ts. -->
+     azula-docs/openspec/specs/design-system/design.md §3 and the STYLE :root in ./pages.ts. -->
 
 <svg
    width="64"

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appScheme, decodeInviteHeader, inviteAppScheme, isValidInvitePayload, isValidToken, sessionFingerprint } from "./links";
 
 // Shared cross-repo test vectors (Kotlin `link` module, azula-cli's invite.rs, and
-// this suite) — see azula-docs/docs/invitations.md "Test vectors". The ticket
+// this suite) — see azula-docs/openspec/specs/invitations/design.md "Test vectors". The ticket
 // field is 32 opaque ASCII bytes, not a real ticket.
 //
 // V1 — unsigned, no expiry, multi-use (flags=0x00, expires_at=0).

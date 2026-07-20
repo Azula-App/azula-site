@@ -1,4 +1,4 @@
-// Deeplink association files — see docs/deeplinks.md.
+// Deeplink association files — see azula-docs/openspec/specs/deeplinks/design.md.
 
 // iOS Apple App Site Association. appIDs are "<TeamID>.<bundleIdentifier>".
 const IOS_APP_ID = "EB8N37743E.app.azula"; // Apple Team ID EB8N37743E + bundle id app.azula

@@ -10,7 +10,7 @@ signature) wrapping the issuer's iroh `EndpointTicket`, encoded as `"azi" +
 base32(...)` (RFC 4648, no padding, lowercase). Full payload layout, the wire
 protocol, the accept-side verification model, and the shared cross-repo test
 vectors live in
-[`azula-docs/docs/invitations.md`](../azula-docs/docs/invitations.md) — read
+[`azula-docs/openspec/specs/invitations/design.md`](../azula-docs/openspec/specs/invitations/design.md) — read
 that first; this file only documents the Worker-served routes.
 
 - `https://azula.app/i/<encoded>` — canonical share link (universal/app link).
@@ -106,7 +106,7 @@ deliberately ships **no webfonts** (system font stacks instead) so that the
    12 MCP tools (`connect`, `list_devices`, `send_message`, `get_messages`,
    `wait_for_reply`, `set_name`, `say`, `render_ui`, `update_ui`, `delete_ui`,
    `start_pairing`, `disconnect`) — see the canonical catalog in
-   `azula-docs/docs/mcp-bridge.md`. One bridge holds **multiple devices** at
+   `azula-docs/openspec/specs/mcp-bridge/design.md`. One bridge holds **multiple devices** at
    once, addressed by name.
 
 ### Device registry (state files the LLM knows about)
@@ -133,7 +133,7 @@ server is **`azula serve-mcp`** — run it on a host/container and point
 The old "Future: short, revocable links" idea here (a Worker-side `POST
 ticket → id` KV/D1 mapping) is **superseded** by the invite payload scheme
 documented in
-[`azula-docs/docs/invitations.md`](../azula-docs/docs/invitations.md): an
+[`azula-docs/openspec/specs/invitations/design.md`](../azula-docs/openspec/specs/invitations/design.md): an
 invite id, validity window, and single-use flag travel in the payload itself,
 and revocation is issuer-side (deleting the id from the issuer's local
 issued-invite store) — no Worker storage needed. See that doc's "Trust model"

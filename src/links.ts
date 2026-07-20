@@ -18,7 +18,7 @@ export function appScheme(token: string): string {
   return `azula://connect?code=${encodeURIComponent(token)}`;
 }
 
-// --- Invite payload v2 (see azula-docs/docs/invitations.md) ---------------
+// --- Invite payload v2 (see azula-docs/openspec/specs/invitations/design.md) ---------------
 //
 // Binary header, all integers big-endian:
 //   0   1  version      0x01; reject anything else

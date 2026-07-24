@@ -28,14 +28,19 @@ export function appleAppSiteAssociation(): unknown {
 }
 
 export function assetLinks(): unknown {
+  const target = {
+    namespace: "android_app",
+    package_name: ANDROID_PACKAGE,
+    sha256_cert_fingerprints: [ANDROID_SHA256],
+  };
   return [
-    {
-      relation: ["delegate_permission/common.handle_all_urls"],
-      target: {
-        namespace: "android_app",
-        package_name: ANDROID_PACKAGE,
-        sha256_cert_fingerprints: [ANDROID_SHA256],
-      },
-    },
+    { relation: ["delegate_permission/common.handle_all_urls"], target },
+    // Associates recovery-phrase credentials with azula.app rather than with a
+    // single package. Credentials written by Credential Manager's
+    // createCredential are scoped to the *calling* package, so without this a
+    // phrase saved from app.azula.mock is invisible to app.azula — which is
+    // exactly what device testing hit. Load-bearing, not labelling: it is what
+    // makes the restore step's fill find a phrase the back-up step saved.
+    { relation: ["delegate_permission/common.get_login_creds"], target },
   ];
 }

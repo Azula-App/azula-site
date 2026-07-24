@@ -13,6 +13,12 @@ describe("appleAppSiteAssociation", () => {
       ]),
     );
   });
+
+  it("declares applinks for the device-link paths (multi-device-identity task 6.6)", () => {
+    const aasa = appleAppSiteAssociation() as any;
+    const components = aasa.applinks.details[0].components;
+    expect(components).toEqual(expect.arrayContaining([expect.objectContaining({ "/": "/l/*" })]));
+  });
 });
 
 describe("assetLinks", () => {

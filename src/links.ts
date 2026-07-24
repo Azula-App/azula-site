@@ -129,3 +129,79 @@ export function decodeInviteHeader(payload: string): InviteHeader | null {
 export function inviteAppScheme(payload: string): string {
   return `azula://i?c=${encodeURIComponent(payload)}`;
 }
+
+// --- Device-link payload (see azula-docs/openspec/specs/device-linking/spec.md, multi-device-identity
+// task 6.6) ------------------------------------------------------------------------------------
+//
+// Binary header, all integers big-endian:
+//   0   1  version      0x01; reject anything else
+//   1   32 device_pk    the new device's Ed25519 public key
+//   33  1  name_len     = n
+//   34  n  name         UTF-8 device name, shown to the root-holding device before granting
+//   34+n 2  ticket_len  = m
+//   36+n m  ticket      opaque connect ticket; opaque to this codec
+//
+// Encoded as "azl" + base32(payload), same RFC 4648 alphabet/rules as the invite payload
+// above. This is purely a URL wrapper around the payload `core/DeviceCert.kt`'s
+// `LinkPayloadCodec` (Kotlin) and `azula-cli/src/certs.rs` (Rust) already produce — this file
+// never mints or verifies a certificate, only decodes enough of the header to render the
+// landing page.
+
+const LINK_HEADER_MIN_BYTES = 36; // header with zero-length name and ticket
+const LINK_PREFIX = "azl";
+// "azl" + base32 body. Body length is bounds-checked loosely here (cheap syntactic
+// filter); decodeLinkPayloadHeader does the exact structural validation.
+const LINK_PAYLOAD_RE = /^azl[a-z2-7]{32,4093}$/;
+
+export function isValidLinkPayload(s: string): boolean {
+  return LINK_PAYLOAD_RE.test(s);
+}
+
+export interface LinkHeader {
+  version: number;
+  /** Lowercase-hex render of the new device's public key. */
+  devicePkHex: string;
+  /** UTF-8 device name the new device chose (e.g. "My laptop"). */
+  name: string;
+  ticketLen: number;
+}
+
+/**
+ * Decodes and structurally validates the fixed-offset header of a device-link payload (the
+ * `"azl" + base32(...)` encoded form). Does not decode or inspect the opaque ticket bytes
+ * beyond checking total length. Returns null on any inconsistency (bad encoding, wrong
+ * version, truncated payload, a name_len/ticket_len that overruns the payload, or a name that
+ * isn't valid UTF-8).
+ */
+export function decodeLinkPayloadHeader(payload: string): LinkHeader | null {
+  if (!isValidLinkPayload(payload)) return null;
+  const bytes = b32decode(payload.slice(LINK_PREFIX.length));
+  if (bytes === null || bytes.length < LINK_HEADER_MIN_BYTES) return null;
+
+  const version = bytes[0];
+  if (version !== 1) return null;
+
+  const devicePk = bytes.slice(1, 33);
+  const nameLen = bytes[33];
+  const nameStart = 34;
+  const nameEnd = nameStart + nameLen;
+  if (nameEnd + 2 > bytes.length) return null;
+  const ticketLen = readU16BE(bytes, nameEnd);
+
+  const expectedLen = nameEnd + 2 + ticketLen;
+  if (bytes.length !== expectedLen) return null;
+
+  let name: string;
+  try {
+    name = new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(bytes.slice(nameStart, nameEnd));
+  } catch {
+    return null;
+  }
+
+  return { version, devicePkHex: toHex(devicePk), name, ticketLen };
+}
+
+/** The canonical custom-scheme deeplink the device-link page tries to open. */
+export function deviceLinkAppScheme(payload: string): string {
+  return `azula://l?c=${encodeURIComponent(payload)}`;
+}

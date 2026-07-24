@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { appScheme, decodeInviteHeader, inviteAppScheme, isValidInvitePayload, isValidToken, sessionFingerprint } from "./links";
+import {
+  appScheme,
+  decodeInviteHeader,
+  decodeLinkPayloadHeader,
+  deviceLinkAppScheme,
+  inviteAppScheme,
+  isValidInvitePayload,
+  isValidLinkPayload,
+  isValidToken,
+  sessionFingerprint,
+} from "./links";
 
 // Shared cross-repo test vectors (Kotlin `link` module, azula-cli's invite.rs, and
 // this suite) — see azula-docs/openspec/specs/invitations/design.md "Test vectors". The ticket
@@ -16,6 +26,23 @@ const V1_VERSION_02 =
   "aziaiaaci2fm6e2xtppnfk3saaaaaaaaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bnoruwg23foqwwe6lumvzq";
 // V1 truncated mid-ticket (must be rejected).
 const V1_TRUNCATED = "aziaeaaci2fm6e2xtppnfk3saaaaaaaaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bn";
+
+// Device-link payload vector (multi-device-identity task 6.6 -- see
+// azula-docs/openspec/specs/device-linking/spec.md) -- device_pk = bytes 0x01..0x20, name =
+// "My Laptop", ticket = the same 32 opaque ASCII bytes the invite vectors use. Generated with a
+// throwaway script implementing the exact layout below; not shared cross-repo (unlike the
+// invite vectors), since this codec's canonical cross-language vectors live in the `link`
+// module's / azula-cli's own test suites (task 2.4) -- this is purely a shape/decode check for
+// the site's landing page.
+const LINK_ENCODED =
+  "azlaeaqeayeaudaocajbifqydiob4ibceqtcqkrmfyydenbwha5dypsacknpeqeyylqorxxaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bnoruwg23foqwwe6lumvzq";
+const LINK_DEVICE_PK_HEX = "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20";
+// Same vector with the version byte flipped to 0x02 (must be rejected).
+const LINK_BAD_VERSION =
+  "azlaiaqeayeaudaocajbifqydiob4ibceqtcqkrmfyydenbwha5dypsacknpeqeyylqorxxaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bnoruwg23foqwwe6lumvzq";
+// Same vector truncated mid-ticket (must be rejected).
+const LINK_TRUNCATED =
+  "azlaeaqeayeaudaocajbifqydiob4ibceqtcqkrmfyydenbwha5dypsacknpeqeyylqorxxaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bnoruwg23foq";
 
 describe("isValidToken", () => {
   it("accepts a minimal 6-char URL-safe token", () => {
@@ -142,5 +169,61 @@ describe("decodeInviteHeader", () => {
 describe("inviteAppScheme", () => {
   it("builds the azula://i deeplink with the payload URL-encoded", () => {
     expect(inviteAppScheme(V1_ENCODED)).toBe(`azula://i?c=${V1_ENCODED}`);
+  });
+});
+
+describe("isValidLinkPayload", () => {
+  it("accepts a well-formed device-link payload", () => {
+    expect(isValidLinkPayload(LINK_ENCODED)).toBe(true);
+  });
+
+  it("rejects strings without the azl prefix", () => {
+    expect(isValidLinkPayload(LINK_ENCODED.slice(1))).toBe(false);
+    expect(isValidLinkPayload("azi" + LINK_ENCODED.slice(3))).toBe(false);
+  });
+
+  it("rejects uppercase or otherwise out-of-alphabet characters", () => {
+    expect(isValidLinkPayload(LINK_ENCODED.toUpperCase())).toBe(false);
+    expect(isValidLinkPayload("azl" + "0".repeat(40))).toBe(false); // "0"/"1" aren't in the alphabet
+  });
+
+  it("rejects an empty payload and a bare azl prefix", () => {
+    expect(isValidLinkPayload("")).toBe(false);
+    expect(isValidLinkPayload("azl")).toBe(false);
+  });
+});
+
+describe("decodeLinkPayloadHeader", () => {
+  it("decodes the device-link vector (version, device pk, name, ticket length)", () => {
+    const header = decodeLinkPayloadHeader(LINK_ENCODED);
+    expect(header).toEqual({
+      version: 1,
+      devicePkHex: LINK_DEVICE_PK_HEX,
+      name: "My Laptop",
+      ticketLen: 32,
+    });
+  });
+
+  it("rejects a version byte of 0x02", () => {
+    expect(decodeLinkPayloadHeader(LINK_BAD_VERSION)).toBeNull();
+  });
+
+  it("rejects a payload truncated mid-ticket", () => {
+    expect(decodeLinkPayloadHeader(LINK_TRUNCATED)).toBeNull();
+  });
+
+  it("rejects malformed base32", () => {
+    expect(decodeLinkPayloadHeader(LINK_ENCODED.toUpperCase())).toBeNull();
+  });
+
+  it("rejects a non-link string", () => {
+    expect(decodeLinkPayloadHeader("not-a-link")).toBeNull();
+    expect(decodeLinkPayloadHeader(V1_ENCODED)).toBeNull(); // an invite payload, wrong prefix
+  });
+});
+
+describe("deviceLinkAppScheme", () => {
+  it("builds the azula://l deeplink with the payload URL-encoded", () => {
+    expect(deviceLinkAppScheme(LINK_ENCODED)).toBe(`azula://l?c=${LINK_ENCODED}`);
   });
 });

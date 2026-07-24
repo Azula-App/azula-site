@@ -8,6 +8,11 @@ const env = {} as Env;
 const V1_INVITE_ENCODED =
   "aziaeaaci2fm6e2xtppnfk3saaaaaaaaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bnoruwg23foqwwe6lumvzq";
 
+// Device-link payload vector (multi-device-identity task 6.6) — see links.test.ts for how this
+// was generated: device_pk = bytes 0x01..0x20, name = "My Laptop", a 32-byte opaque ticket.
+const LINK_ENCODED =
+  "azlaeaqeayeaudaocajbifqydiob4ibceqtcqkrmfyydenbwha5dypsacknpeqeyylqorxxaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bnoruwg23foqwwe6lumvzq";
+
 async function get(path: string, init?: RequestInit): Promise<Response> {
   return worker.fetch(new Request(`https://azula.app${path}`, init), env);
 }
@@ -89,6 +94,30 @@ describe("routing", () => {
     expect(body).toContain("isn't valid");
   });
 
+  it("GET /l/<valid-payload> returns 200 with the device-link page", async () => {
+    const res = await get(`/l/${LINK_ENCODED}`);
+    expect(res.status).toBe(200);
+    const body = await res.text();
+    expect(body).toContain("Link a new device");
+    expect(body).toContain("My Laptop");
+    expect(body).toContain(`azula://l?c=${LINK_ENCODED}`);
+    expect(body).toContain(LINK_ENCODED);
+  });
+
+  it("GET /l/<invalid-payload> falls back to the invalid-link page with 404", async () => {
+    const res = await get("/l/not-a-link");
+    expect(res.status).toBe(404);
+    const body = await res.text();
+    expect(body).toContain("isn't valid");
+  });
+
+  it("GET /l/<truncated-payload> falls back to the invalid-link page with 404", async () => {
+    const res = await get(`/l/${LINK_ENCODED.slice(0, -20)}`);
+    expect(res.status).toBe(404);
+    const body = await res.text();
+    expect(body).toContain("isn't valid");
+  });
+
   it("GET /mcp returns the JSON placeholder", async () => {
     const res = await get("/mcp");
     expect(res.status).toBe(200);
@@ -131,7 +160,7 @@ describe("routing", () => {
     expect(res.headers.get("content-type")).toContain("application/json");
     const data = (await res.json()) as any;
     expect(data.applinks.details[0].components).toEqual(
-      expect.arrayContaining([expect.objectContaining({ "/": "/s/*" })]),
+      expect.arrayContaining([expect.objectContaining({ "/": "/s/*" }), expect.objectContaining({ "/": "/l/*" })]),
     );
   });
 

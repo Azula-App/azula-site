@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { invitePage, invitePageV2, landingPage, notFoundPage, privacyPage } from "./pages";
-import type { InviteHeader } from "./links";
+import { deviceLinkPage, invitePage, invitePageV2, landingPage, notFoundPage, privacyPage } from "./pages";
+import type { InviteHeader, LinkHeader } from "./links";
 
 const V1_PAYLOAD =
   "aziaeaaci2fm6e2xtppnfk3saaaaaaaaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bnoruwg23foqwwe6lumvzq";
@@ -22,6 +22,17 @@ const V2_HEADER: InviteHeader = {
   inviteId: "0123456789abcdef",
   issuedAt: 1767225600,
   expiresAt: 1767312000,
+  ticketLen: 32,
+};
+
+// Device-link payload vector (multi-device-identity task 6.6) — see links.test.ts for how this
+// was generated: device_pk = bytes 0x01..0x20, name = "My Laptop", a 32-byte opaque ticket.
+const LINK_PAYLOAD =
+  "azlaeaqeayeaudaocajbifqydiob4ibceqtcqkrmfyydenbwha5dypsacknpeqeyylqorxxaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bnoruwg23foqwwe6lumvzq";
+const LINK_HEADER: LinkHeader = {
+  version: 1,
+  devicePkHex: "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+  name: "My Laptop",
   ticketLen: 32,
 };
 
@@ -121,6 +132,8 @@ describe("no third-party resource loads", () => {
     ["invitePage", invitePage("abcdefgh12345")],
     ["invitePage (invalid)", invitePage(null)],
     ["invitePageV2", invitePageV2(V1_PAYLOAD, V2_HEADER)],
+    ["deviceLinkPage", deviceLinkPage(LINK_PAYLOAD, LINK_HEADER)],
+    ["deviceLinkPage (invalid)", deviceLinkPage(null, null)],
     ["notFoundPage", notFoundPage()],
   ];
 
@@ -161,5 +174,32 @@ describe("invitePageV2", () => {
   it("does not claim to verify the signature on this page", () => {
     const page = invitePageV2(V1_PAYLOAD, V2_HEADER);
     expect(page).toMatch(/does not verify the\s+signature/);
+  });
+});
+
+describe("deviceLinkPage", () => {
+  it("renders the invalid-link view when payload/header are null", () => {
+    const page = deviceLinkPage(null, null);
+    expect(page).toContain("isn't valid");
+    expect(page).not.toContain("azula://l");
+  });
+
+  it("renders the device name, appScheme link, and raw payload for a valid header", () => {
+    const page = deviceLinkPage(LINK_PAYLOAD, LINK_HEADER);
+    expect(page).toContain("Link a new device");
+    expect(page).toContain("My Laptop");
+    expect(page).toContain(`azula://l?c=${LINK_PAYLOAD}`);
+    expect(page).toContain(LINK_PAYLOAD);
+  });
+
+  it("HTML-escapes the device name", () => {
+    const page = deviceLinkPage(LINK_PAYLOAD, { ...LINK_HEADER, name: `ab&c<d>e"f'g` });
+    expect(page).toContain("ab&amp;c&lt;d&gt;e&quot;f&#39;g");
+  });
+
+  it("does not claim this is an invite", () => {
+    const page = deviceLinkPage(LINK_PAYLOAD, LINK_HEADER);
+    expect(page).not.toContain("Accept an azula invite");
+    expect(page).not.toContain("Join an azula session");
   });
 });

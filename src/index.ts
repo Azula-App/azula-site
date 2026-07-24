@@ -1,5 +1,5 @@
-import { invitePage, invitePageV2, landingPage, notFoundPage, privacyPage } from "./pages";
-import { decodeInviteHeader, isValidToken } from "./links";
+import { deviceLinkPage, invitePage, invitePageV2, landingPage, notFoundPage, privacyPage } from "./pages";
+import { decodeInviteHeader, decodeLinkPayloadHeader, isValidToken } from "./links";
 import { appleAppSiteAssociation, assetLinks } from "./wellknown";
 import { APPLE_TOUCH_PNG_B64, FAVICON_SVG, b64ToBytes } from "./icon";
 
@@ -68,6 +68,18 @@ export default {
       const header = payload !== null ? decodeInviteHeader(payload) : null;
       if (payload === null || header === null) return html(invitePage(null), 404);
       return html(invitePageV2(payload, header));
+    }
+
+    // Device-link payload (see azula-docs/openspec/specs/device-linking/spec.md,
+    // multi-device-identity task 6.6). Not an invite -- a different device's own node key +
+    // connect ticket, wrapped in this route so a phone camera can open it instead of just
+    // reading inert text off a QR. Falls back to the same invalid-link posture as /i.
+    const link = path.match(/^\/l\/(.+)$/);
+    if (link) {
+      const payload = safeDecode(link[1]);
+      const header = payload !== null ? decodeLinkPayloadHeader(payload) : null;
+      if (payload === null || header === null) return html(deviceLinkPage(null, null), 404);
+      return html(deviceLinkPage(payload, header));
     }
 
     // Static MCP endpoint. Sessions are no longer encoded in the URL: configure

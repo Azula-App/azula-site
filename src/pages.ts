@@ -1,4 +1,4 @@
-import { appScheme, inviteAppScheme, sessionFingerprint, type InviteHeader } from "./links";
+import { appScheme, deviceLinkAppScheme, inviteAppScheme, sessionFingerprint, type InviteHeader, type LinkHeader } from "./links";
 
 // No webfont <link> on purpose: the pages must not make third-party requests, so
 // that /privacy can say the site loads nothing but itself. Both families are used
@@ -213,6 +213,55 @@ export function invitePageV2(payload: string, header: InviteHeader): string {
         fmt();
         setInterval(fmt, 1000);
       })();
+    </script>
+    <footer>azula · <a href="https://azula.app">azula.app</a></footer>`,
+  );
+}
+
+/**
+ * multi-device-identity task 6.6: the landing page for a device-link QR/URL — a *different*
+ * device's own node key + connect ticket, wrapped so a phone's camera app can open it (a bare
+ * `azl…` string is just inert text to a camera). Not an invite: there's no signature/expiry to
+ * show, but the structure mirrors [invitePageV2] — try the custom scheme, offer the store links,
+ * and always show the copyable code as the fallback (the paste box on the root-holding device's
+ * "Link a new device" screen accepts either form).
+ */
+export function deviceLinkPage(payload: string | null, header: LinkHeader | null): string {
+  if (!payload || !header) {
+    return shell(
+      "azula — invalid link",
+      `${brandHeader}
+      <div class="sec center">
+        <h2>That device-link code isn't valid</h2>
+        <p>Ask the other device to generate a fresh one, or open azula and paste it in.</p>
+        <div class="btns center" style="justify-content:center">${STORE_BTNS}</div>
+      </div>`,
+    );
+  }
+  const scheme = deviceLinkAppScheme(payload);
+  return shell(
+    "azula — link a device",
+    `${brandHeader}
+    <div class="sec">
+      <h2>Link a new device</h2>
+      <p>Opening the app… if nothing happens, it isn't installed yet.</p>
+      <p style="color:var(--content-dim);font-size:13.5px">
+        Only continue on the device that already holds your identity — you'll confirm four
+        verification words on both devices before anything is granted, and the new device never
+        receives your recovery phrase.
+      </p>
+      <div class="codebox"><span class="k">device</span><span>${escapeHtml(header.name)}</span></div>
+      <div class="btns">
+        <a class="btn primary" href="${scheme}">Open in azula</a>
+      </div>
+      <p style="margin-top:18px;color:var(--content-dim);font-size:13.5px">Don't have azula?</p>
+      <div class="btns">${STORE_BTNS}</div>
+      <p style="margin-top:18px;color:var(--content-faint);font-size:12.5px">Or open azula and paste this code:</p>
+      <div class="codebox"><span style="font:12px var(--mono);color:var(--content)">${escapeHtml(payload)}</span></div>
+    </div>
+    <script>
+      // Try the custom scheme; the universal/app link already covers installed apps.
+      setTimeout(function(){ window.location.href = ${JSON.stringify(scheme)}; }, 200);
     </script>
     <footer>azula · <a href="https://azula.app">azula.app</a></footer>`,
   );

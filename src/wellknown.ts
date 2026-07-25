@@ -6,7 +6,7 @@ const IOS_APP_ID = "EB8N37743E.app.azula"; // Apple Team ID EB8N37743E + bundle 
 // Android App Links. This is the Play **App Signing** cert SHA-256 (from Play
 // Console → App signing), NOT the upload cert — Play re-signs the AAB with it.
 const ANDROID_PACKAGE = "app.azula";
-const ANDROID_SHA256 = "84:94:45:9D:9B:DE:72:6D:E1:B7:ED:50:C5:0D:F4:76:CE:45:F2:39:7E:3C:E3:10:E4:A5:90:93:E2:F6:78:98";
+const ANDROID_SHA256 = "9A:CD:CD:2B:0A:0B:0B:17:A7:69:B1:2D:08:4E:75:A8:86:D2:2D:1B:8B:7E:C1:47:BF:90:6C:78:1F:CD:72:F8";
 
 export function appleAppSiteAssociation(): unknown {
   return {

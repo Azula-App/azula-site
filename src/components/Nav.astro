@@ -1,0 +1,20 @@
+---
+import BrandHeader from "./BrandHeader.astro";
+import { GITHUB_ORG } from "../lib/site";
+
+const path = Astro.url.pathname;
+const isCurrent = (href: string) =>
+  href === "/" ? path === "/" : path === href || path.startsWith(`${href}/`);
+---
+
+<div class="topbar">
+  <BrandHeader link={path !== "/"} />
+  <nav class="nav" aria-label="Site">
+    <a href="/docs" aria-current={isCurrent("/docs") ? "page" : undefined}>docs</a>
+    <a href="/docs/cli" aria-current={isCurrent("/docs/cli") ? "page" : undefined}>cli</a>
+    <a href="/docs/mcp" aria-current={isCurrent("/docs/mcp") ? "page" : undefined}>mcp</a>
+    <a href="/privacy" aria-current={isCurrent("/privacy") ? "page" : undefined}>privacy</a>
+    <a href={GITHUB_ORG} rel="noopener">github</a>
+    <a href="/llms.txt">llms.txt</a>
+  </nav>
+</div>

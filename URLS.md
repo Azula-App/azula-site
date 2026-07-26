@@ -14,8 +14,8 @@ vectors live in
 that first; this file only documents the Worker-served routes.
 
 - `https://azula.app/i/<encoded>` — canonical share link (universal/app link).
-  Opens the app directly to the invite; falls back to a web page (`invitePageV2`
-  in `src/pages.ts`) showing the invite id fingerprint, expiry countdown,
+  Opens the app directly to the invite; falls back to a web page
+  (`src/pages/i/[payload].astro`) showing the invite id fingerprint, expiry countdown,
   signed/single-use badges, store links, and the raw payload to paste. Invalid
   or truncated payloads fall back to the same invalid-link page as the legacy
   `/s/` route, with a 404 status.
@@ -41,8 +41,12 @@ share links should use `/i/`.
 
 | URL | Purpose |
 |-----|---------|
-| `https://azula.app/` | Landing page |
-| `https://azula.app/privacy` | Privacy policy (`privacyPage` in `src/pages.ts`), linked from the landing footer. Every line is a claim about the shipped code — see the note below. |
+| `https://azula.app/` | Landing page (`src/pages/index.astro`) |
+| `https://azula.app/docs`, `/docs/{install,cli,mcp,links,source}` | Documentation. Authored as Markdown in `src/content/docs/`; the page and its `.md` twin render from the same file. |
+| `https://azula.app/privacy` | Privacy policy (`src/content/pages/privacy.md`), linked from the landing footer. Every line is a claim about the shipped code — see the note below. |
+| `<any page>.md` | The Markdown source of that page (`/index.md`, `/privacy.md`, `/docs.md`, `/docs/cli.md`, …), served as `text/markdown`. Advertised from each page by `<link rel="alternate">` and a "view as markdown" control. |
+| `https://azula.app/llms.txt` | [llms.txt](https://llmstxt.org) index: name, summary, and a link to every page's `.md` with a one-line note. Generated from the content collections. |
+| `https://azula.app/llms-full.txt` | Every page concatenated into one Markdown document. |
 | `https://azula.app/i/<encoded>` | **Invite (v2)** — universal/app link. See above. |
 | `https://azula.app/s/<token>` | *Legacy* session invite — universal/app link. Opens the app to that session; falls back to a web page with the code + store links. `/connect/<token>` is an alias. Legacy-supported, not the canonical share format anymore. |
 | `https://azula.app/mcp` | **MCP endpoint** — *static*; configured once in an LLM client. Sessions are not in the URL; you pair devices via the `connect` tool / `azula pair`. (A `/mcp/<token>` path is accepted but the token is ignored, with a deprecation note.) |
@@ -53,14 +57,39 @@ Custom-scheme fallbacks: `azula://i?c=<encoded>` (current) and
 `azula://connect?code=<token>` (legacy, used by the `/s/` invite page's JS and
 registered by both apps).
 
+## How the site is built
+
+The site is an [Astro](https://astro.build) project on Cloudflare Workers
+(`@astrojs/cloudflare`). It is **static by default**: pages are prerendered into
+`dist/client` and served as assets, and only the routes that need the request
+opt out with `export const prerender = false` — the deeplink pages (`/i/`,
+`/s/`, `/connect/`, `/l/`), `/mcp`, `/health`, and the two `.well-known` files.
+
+The `.well-known` files stay Worker-rendered deliberately: the AASA path has no
+file extension, so serving it as a static asset would leave the content type to
+be guessed, and the deeplinks spec requires unredirected `application/json`.
+
+Prose lives in Markdown under `src/content/`, which is also what the `.md`
+twins and `/llms-full.txt` serve — there is no second copy of any page.
+`npm run verify` runs typecheck, tests, build, and `scripts/check-build.mjs`,
+which asserts the Markdown twins exist and that no built page references an
+off-origin resource.
+
 ## Deploying
 
 **azula.app updates itself from git.** The Worker is wired to this repo through
 Cloudflare's Git integration (Workers Builds), so merging to `main` builds and
 deploys automatically — you do not need to run `wrangler deploy` by hand, and a
 manual deploy is only for out-of-band situations. The deploy config lives on the
-Cloudflare dashboard, not in `.github/workflows/` (CI here only runs typecheck +
-tests).
+Cloudflare dashboard, not in `.github/workflows/` (CI here runs typecheck,
+tests, and the build checks).
+
+> **The dashboard build command must run `astro build`.** Since the Astro
+> migration there is a build step: the deploy needs `npm run build` (or
+> `npx astro build`) before `wrangler deploy`, and `wrangler deploy` must run
+> after it so the adapter's generated config and `dist/client` assets are in
+> place. A deploy that skips the build ships whatever `dist/` it finds — or
+> nothing.
 
 Practical consequence: **anything merged to `main` is live on the public site.**
 That matters most for `/privacy` below — an edit to that page is a change to a
@@ -68,7 +97,7 @@ public legal claim the moment it lands, not when someone remembers to deploy.
 
 ## Privacy policy (`/privacy`)
 
-`privacyPage()` in `src/pages.ts` is **not boilerplate** — it is a set of factual
+`src/content/pages/privacy.md` is **not boilerplate** — it is a set of factual
 claims about what the shipped code does, and it is the URL the App Store / Play
 listings will point at. It currently asserts: no accounts, no analytics or crash
 reporting anywhere, no backend storage, keys and messages local to the device,
@@ -80,11 +109,13 @@ user wires up themselves.
 
 **This page goes stale silently.** Anything that adds a telemetry/crash SDK, a
 backend, cloud sync, remote push (FCM/APNs), or a third-party resource on this
-site makes it false. If you do any of those, update the page and bump
-`PRIVACY_UPDATED`. The tests in `src/pages.test.ts` pin each disclosure, and one
-asserts no page loads an off-origin `<link>`/`<script>`/`<img>` — the site
-deliberately ships **no webfonts** (system font stacks instead) so that the
-"loads nothing but itself" claim holds.
+site makes it false. If you do any of those, update the page and bump its
+"Last updated" line. `src/lib/privacy.test.ts` pins each disclosure, and
+`scripts/check-build.mjs` asserts no built page loads an off-origin
+`<link>`/`<script>`/`<img>` — the site deliberately ships **no webfonts**
+(system font stacks instead) so that the "loads nothing but itself" claim
+holds. Every page also carries a `default-src 'self'` Content-Security-Policy,
+so a browser would refuse a third-party request even if one slipped in.
 
 ## Flow A — link a person (peer chat)
 
@@ -96,16 +127,18 @@ deliberately ships **no webfonts** (system font stacks instead) so that the
 
 ## Flow B — link an LLM (MCP)
 
-1. Run the bridge where iroh works: `azula serve-mcp --bind 0.0.0.0:8765`. It
-   serves a **static** MCP endpoint at `/mcp` (no token in the path).
+1. Run the server where iroh works: `azula mcp` (stdio) or
+   `azula mcp --http 0.0.0.0:8765`. Over HTTP it serves a **static** MCP
+   endpoint at `/mcp` (no token in the path). `azula serve-mcp` is a deprecated
+   alias.
 2. Configure that endpoint **once** in an MCP-capable LLM client — point
    `mcp.azula.app` (or a proxy) at the bridge, or use its address directly.
 3. Pair a device by giving azula its session link: either the **`connect`** tool
    (paste `https://azula.app/s/<token>` in chat) or **`azula pair <url>`**. The
    bridge parses the token, dials the app on the `azula/llm/0` ALPN, and exposes
-   12 MCP tools (`connect`, `list_devices`, `send_message`, `get_messages`,
-   `wait_for_reply`, `set_name`, `say`, `render_ui`, `update_ui`, `delete_ui`,
-   `start_pairing`, `disconnect`) — see the canonical catalog in
+   its MCP tools (`connect`, `list_devices`, `send_message`, `send_file`,
+   `get_messages`, `wait_for_reply`, `set_name`, `say`, `render_ui`,
+   `update_ui`, `delete_ui`, `start_pairing`, `disconnect`) — see the canonical catalog in
    `azula-docs/openspec/specs/mcp-bridge/design.md`. One bridge holds **multiple devices** at
    once, addressed by name.
 
@@ -124,9 +157,10 @@ worktrees, and are visible to an agent:
 ### Why the bridge is separate from this Worker
 
 Cloudflare Workers cannot open iroh connections (no raw UDP/QUIC, no long-lived
-holepunched sockets), so `/mcp` here is just an info placeholder. The real MCP
-server is **`azula serve-mcp`** — run it on a host/container and point
-`mcp.azula.app` (or a Worker reverse-proxy of `/mcp`) at it.
+holepunched sockets), so `/mcp` here is just an info placeholder pointing at
+[`/docs/mcp`](https://azula.app/docs/mcp). The real MCP server is
+**`azula mcp`** — run it on a host/container and point `mcp.azula.app` (or a
+Worker reverse-proxy of `/mcp`) at it.
 
 ## Revocable, identified links
 

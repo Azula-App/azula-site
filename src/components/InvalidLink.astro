@@ -1,0 +1,15 @@
+---
+import StoreButtons from "./StoreButtons.astro";
+
+interface Props {
+  heading: string;
+  detail: string;
+}
+const { heading, detail } = Astro.props;
+---
+
+<div class="sec center">
+  <h2>{heading}</h2>
+  <p>{detail}</p>
+  <StoreButtons center />
+</div>

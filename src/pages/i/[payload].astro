@@ -1,0 +1,91 @@
+---
+import Base from "../../layouts/Base.astro";
+import BrandHeader from "../../components/BrandHeader.astro";
+import InvalidLink from "../../components/InvalidLink.astro";
+import OpenInApp from "../../components/OpenInApp.astro";
+import PasteFallback from "../../components/PasteFallback.astro";
+import { decodeInviteHeader, inviteAppScheme } from "../../lib/links";
+
+// Invite payload v2 — the canonical share link. See
+// azula-docs/openspec/specs/invitations/design.md. Rendered per request: the
+// payload is in the URL, and an invalid one must 404 rather than be cached.
+export const prerender = false;
+
+const payload = Astro.params.payload ?? "";
+const header = decodeInviteHeader(payload);
+
+if (!header) Astro.response.status = 404;
+
+const expiryFallback = header
+  ? header.expiresAt === 0
+    ? "no expiry"
+    : header.expiresAt * 1000 < Date.now()
+      ? "expired"
+      : "calculating…"
+  : "";
+---
+
+{
+  header ? (
+    <Base title="azula — accept invite" bare>
+      <BrandHeader />
+      <div class="sec">
+        <h2>Accept an azula invite</h2>
+        <p>Opening the app… if nothing happens, it isn't installed yet.</p>
+        <div class="codebox">
+          <span class="k">invite</span>
+          <span>{header.inviteId}</span>
+        </div>
+        <div class="btns" style="margin-top:2px">
+          {header.signed && <span class="pill">✓ signed</span>}
+          {header.singleUse && <span class="pill">⚡ single-use</span>}
+          <span class="pill" id="expiry" data-expires-at={String(header.expiresAt)}>
+            {expiryFallback}
+          </span>
+        </div>
+        <OpenInApp scheme={inviteAppScheme(payload)} />
+        <p style="margin-top:18px;color:var(--content-faint);font-size:12.5px">
+          Signed invites are verified by the app when you connect — this page does not verify the
+          signature (that's planned future work).
+        </p>
+        <PasteFallback payload={payload} noun="invite" />
+      </div>
+    </Base>
+  ) : (
+    <Base title="azula — invalid link" bare>
+      <BrandHeader />
+      <InvalidLink
+        heading="That invite link isn't valid"
+        detail="Ask for a fresh code, or open the azula app and paste it in."
+      />
+    </Base>
+  )
+}
+
+<script>
+  // Live expiry countdown. expires_at rides in a data attribute so this script
+  // stays static and hashable under the site's Content-Security-Policy.
+  const el = document.getElementById("expiry");
+  const expiresAt = Number(el?.dataset.expiresAt ?? 0);
+  if (el && expiresAt > 0) {
+    const fmt = () => {
+      const diff = expiresAt - Math.floor(Date.now() / 1000);
+      if (diff <= 0) {
+        el.textContent = "expired";
+        return;
+      }
+      const d = Math.floor(diff / 86400);
+      const h = Math.floor((diff % 86400) / 3600);
+      const m = Math.floor((diff % 3600) / 60);
+      const s = Math.floor(diff % 60);
+      const parts: string[] = [];
+      if (d) parts.push(`${d}d`);
+      if (h || d) parts.push(`${h}h`);
+      if (m || h || d) parts.push(`${m}m`);
+      parts.push(`${s}s`);
+      el.textContent = `expires in ${parts.join(" ")}`;
+    };
+    fmt();
+    setInterval(fmt, 1000);
+  }
+</script>

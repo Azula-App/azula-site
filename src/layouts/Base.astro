@@ -1,0 +1,57 @@
+---
+import "../styles/global.css";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+import { canonicalPath } from "../lib/site";
+
+interface Props {
+  /** Full <title>. */
+  title: string;
+  /** Meta description; also the one-line summary an LLM sees first. */
+  description?: string;
+  /**
+   * Path of this page's Markdown twin (e.g. "/docs/cli.md"). Emits the
+   * rel=alternate link that tells a crawler the machine-readable version
+   * exists. Pages without a Markdown source (the deeplink landing pages)
+   * leave it unset.
+   */
+  markdown?: string;
+  /** Suppress the site nav — the deeplink pages are single-purpose. */
+  bare?: boolean;
+  /** Extra classes on .wrap (e.g. "wide" for the docs grid). */
+  wrapClass?: string;
+}
+
+const { title, description, markdown, bare = false, wrapClass = "" } = Astro.props;
+const canonical = new URL(canonicalPath(Astro.url.pathname), Astro.site ?? Astro.url).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    {/* theme-color is a literal: HTML attrs can't use CSS vars, must track --bg. */}
+    <meta name="theme-color" content="#070709" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="canonical" href={canonical} />
+    {
+      markdown && (
+        <>
+          <link rel="alternate" type="text/markdown" href={markdown} title="Markdown" />
+          <meta name="llms-txt" content="/llms.txt" />
+        </>
+      )
+    }
+  </head>
+  <body>
+    <div class:list={["wrap", wrapClass]}>
+      {bare ? null : <Nav />}
+      <slot />
+      <Footer />
+    </div>
+  </body>
+</html>

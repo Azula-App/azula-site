@@ -16,3 +16,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      # The build is part of CI because two of this site's promises are only
+      # checkable in the output: every page has a Markdown twin listed in
+      # /llms.txt, and no page loads a third-party resource.
+      - run: npm run build
+      - run: node scripts/check-build.mjs

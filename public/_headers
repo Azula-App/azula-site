@@ -1,0 +1,27 @@
+# Response headers for the prerendered pages and assets. Worker-rendered
+# responses set their own (src/lib/http.ts) — these rules only apply to static
+# assets.
+#
+# The Content-Security-Policy itself is emitted per page as a <meta> element by
+# Astro (see security.csp in astro.config.mjs), which is what lets it carry the
+# hashes of the styles and scripts each page actually uses.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/favicon.svg
+  Cache-Control: public, max-age=86400
+
+/apple-touch-icon.png
+  Cache-Control: public, max-age=86400
+
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+
+/llms-full.txt
+  Content-Type: text/plain; charset=utf-8

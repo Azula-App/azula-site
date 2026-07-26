@@ -1,0 +1,24 @@
+---
+interface Props {
+  /** Wrap the wordmark in a link home (everywhere except the landing page). */
+  link?: boolean;
+}
+const { link = true } = Astro.props;
+---
+
+<div>
+  <div class="brand">
+    {
+      link ? (
+        <a href="/">
+          <span class="prompt">&rsaquo;</span>azula<span class="cursor" />
+        </a>
+      ) : (
+        <>
+          <span class="prompt">&rsaquo;</span>azula<span class="cursor" />
+        </>
+      )
+    }
+  </div>
+  <div class="tag">p2p over iroh</div>
+</div>

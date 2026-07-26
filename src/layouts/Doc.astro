@@ -1,0 +1,48 @@
+---
+import Base from "./Base.astro";
+import MarkdownActions from "../components/MarkdownActions.astro";
+import { docEntries, docPath } from "../lib/content";
+import { markdownPath } from "../lib/llms";
+
+interface Props {
+  title: string;
+  description: string;
+  /** URL path of this doc, e.g. "/docs/cli". */
+  path: string;
+}
+
+const { title, description, path } = Astro.props;
+const entries = await docEntries();
+const md = markdownPath(path);
+---
+
+<Base title={`azula — ${title}`} description={description} markdown={md} wrapClass="wide">
+  <div class="docs">
+    <aside class="sidebar">
+      <h2>Docs</h2>
+      <ul>
+        {
+          entries.map((entry) => {
+            const href = docPath(entry.id);
+            return (
+              <li>
+                <a href={href} aria-current={href === path ? "page" : undefined}>
+                  {entry.data.title}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </aside>
+
+    <article class="prose">
+      <div class="doc-head">
+        <h1>{title}</h1>
+        <MarkdownActions href={md} />
+      </div>
+      <p class="lede">{description}</p>
+      <slot />
+    </article>
+  </div>
+</Base>

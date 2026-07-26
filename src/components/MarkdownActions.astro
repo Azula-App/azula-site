@@ -1,0 +1,45 @@
+---
+interface Props {
+  /** Path of this page's Markdown twin, e.g. "/docs/cli.md". */
+  href: string;
+}
+const { href } = Astro.props;
+---
+
+{/*
+  The LLM-readable affordance: every page links to its own Markdown source.
+  "view as markdown" is a plain link and works without JavaScript; "copy page"
+  is progressively enhanced — it ships hidden and the script reveals it, so a
+  no-JS visitor never sees a dead button.
+*/}
+<div class="md-actions">
+  <a href={href} title="This page as Markdown">⌁ view as markdown</a>
+  <button type="button" data-copy-md={href} hidden>⧉ copy page</button>
+</div>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>("button[data-copy-md]");
+  if (navigator.clipboard) {
+    for (const button of buttons) {
+      button.hidden = false;
+      button.addEventListener("click", async () => {
+        const href = button.dataset.copyMd;
+        if (!href) return;
+        const label = button.textContent;
+        try {
+          const response = await fetch(href);
+          if (!response.ok) throw new Error(String(response.status));
+          await navigator.clipboard.writeText(await response.text());
+          button.textContent = "✓ copied";
+          button.dataset.copied = "true";
+        } catch {
+          button.textContent = "✗ copy failed";
+        }
+        setTimeout(() => {
+          button.textContent = label;
+          delete button.dataset.copied;
+        }, 2000);
+      });
+    }
+  }
+</script>

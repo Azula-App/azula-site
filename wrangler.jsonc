@@ -1,8 +1,15 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "azula-site",
-  "main": "src/index.ts",
+  // Astro's Cloudflare adapter owns the entrypoint: `astro build` emits the
+  // worker and the static assets into ./dist. Never point this at a source file.
+  "main": "@astrojs/cloudflare/entrypoints/server",
   "compatibility_date": "2026-06-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1

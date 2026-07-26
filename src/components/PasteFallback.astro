@@ -1,0 +1,18 @@
+---
+import StoreButtons from "./StoreButtons.astro";
+
+interface Props {
+  /** The raw payload to show, for someone who'd rather paste it. */
+  payload: string;
+  /** What to call it in the "paste this" line — "code" or "invite". */
+  noun?: string;
+}
+const { payload, noun = "code" } = Astro.props;
+---
+
+<p style="margin-top:18px;color:var(--content-dim);font-size:13.5px">Don't have azula?</p>
+<StoreButtons />
+<p style="margin-top:18px;color:var(--content-faint);font-size:12.5px">
+  Or open azula and paste this {noun}:
+</p>
+<div class="codebox"><span class="val">{payload}</span></div>

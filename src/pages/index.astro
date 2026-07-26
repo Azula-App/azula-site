@@ -1,0 +1,106 @@
+---
+import Base from "../layouts/Base.astro";
+import StoreButtons from "../components/StoreButtons.astro";
+import MarkdownActions from "../components/MarkdownActions.astro";
+import { REPOS } from "../lib/site";
+---
+
+<Base
+  title="azula — peer to peer"
+  description="Peer-to-peer chat, remote shells, and an LLM bridge over a direct, end-to-end encrypted iroh link."
+  markdown="/index.md"
+>
+  <div class="hero">
+    <h1>Your peer, your shell, your LLM —<br />direct and end-to-end encrypted.</h1>
+    <p>
+      azula links two devices straight to each other over <a href="https://iroh.computer">iroh</a>: UDP
+      holepunched, QUIC encrypted, no server in the middle. Chat with a peer, drive a remote shell, or
+      push messages into an LLM session — all over the same direct link.
+    </p>
+    <div class="pill">◉ direct · 12ms · e2e</div>
+    <StoreButtons />
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="glyph">z</div>
+      <h3>peer chat</h3>
+      <p>Paste a friend's code and you're talking over a direct, encrypted link. No account.</p>
+    </div>
+    <div class="card">
+      <div class="glyph">✦</div>
+      <h3>LLM via MCP</h3>
+      <p>
+        Connect an LLM through an MCP server on your own machine — it talks to your app, not a third
+        party. <a href="/docs/mcp">Set it up →</a>
+      </p>
+    </div>
+    <div class="card">
+      <div class="glyph">›_</div>
+      <h3>remote shell</h3>
+      <p>
+        Hand a server's shell to your phone or desktop and drive it from anywhere.{" "}
+        <a href="/docs/cli">See the CLI →</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Start from the command line</h2>
+    <p>
+      One binary, no runtime. Start an MCP server and scan the pairing code it prints with the app —
+      that pairs the whole machine, so every later session is admitted without another prompt.
+    </p>
+    <pre><code>azula mcp</code></pre>
+    <p>Or drive it straight from a shell, no LLM involved:</p>
+    <pre><code>azula message send --device phone "build finished"
+azula run --handoff on-error -- make test</code></pre>
+    <div class="btns">
+      <a class="btn primary" href="/docs">Read the docs</a>
+      <a class="btn ghost" href="/docs/install">Install the CLI</a>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Connecting an LLM to your session</h2>
+    <p>
+      Configure the azula MCP server once in any MCP-capable client — no per-session URLs. Then pair a
+      device by giving azula its link (in chat, or <code>azula pair</code>):
+    </p>
+    <pre><code>https://azula.app/i/&lt;invite-payload&gt;</code></pre>
+    <p>
+      The same link works for a person — send it to a friend and it opens the app, or shows them how to
+      join. <a href="/docs/links">How links work →</a>
+    </p>
+  </div>
+
+  <div class="sec">
+    <h2>Source</h2>
+    <p>Every part of azula is on GitHub.</p>
+    <div class="grid">
+      {
+        REPOS.map((repo) => (
+          <div class="card">
+            <div class="glyph">›_</div>
+            <h3>
+              <a href={repo.url} rel="noopener">
+                {repo.name}
+              </a>
+            </h3>
+            <p>{repo.blurb}</p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Readable by your agent</h2>
+    <p>
+      Every page here has a Markdown twin at the same path plus <code>.md</code>, indexed in
+      <a href="/llms.txt">/llms.txt</a> — or take the whole site as one document at
+      <a href="/llms-full.txt">/llms-full.txt</a>.
+    </p>
+    <MarkdownActions href="/index.md" />
+  </div>
+</Base>

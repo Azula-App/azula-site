@@ -1,0 +1,51 @@
+---
+import Base from "../../layouts/Base.astro";
+import BrandHeader from "../../components/BrandHeader.astro";
+import InvalidLink from "../../components/InvalidLink.astro";
+import OpenInApp from "../../components/OpenInApp.astro";
+import PasteFallback from "../../components/PasteFallback.astro";
+import { decodeLinkPayloadHeader, deviceLinkAppScheme } from "../../lib/links";
+
+// The landing page for a device-link QR/URL — a *different* device's own node
+// key + connect ticket, wrapped so a phone's camera app can open it (a bare
+// `azl…` string is just inert text to a camera). Not an invite: there's no
+// signature or expiry to show. See
+// azula-docs/openspec/specs/device-linking/spec.md.
+export const prerender = false;
+
+const payload = Astro.params.payload ?? "";
+const header = decodeLinkPayloadHeader(payload);
+
+if (!header) Astro.response.status = 404;
+---
+
+{
+  header ? (
+    <Base title="azula — link a device" bare>
+      <BrandHeader />
+      <div class="sec">
+        <h2>Link a new device</h2>
+        <p>Opening the app… if nothing happens, it isn't installed yet.</p>
+        <p style="color:var(--content-dim);font-size:13.5px">
+          Only continue on the device that already holds your identity — you'll confirm four
+          verification words on both devices before anything is granted, and the new device never
+          receives your recovery phrase.
+        </p>
+        <div class="codebox">
+          <span class="k">device</span>
+          <span>{header.name}</span>
+        </div>
+        <OpenInApp scheme={deviceLinkAppScheme(payload)} />
+        <PasteFallback payload={payload} noun="code" />
+      </div>
+    </Base>
+  ) : (
+    <Base title="azula — invalid link" bare>
+      <BrandHeader />
+      <InvalidLink
+        heading="That device-link code isn't valid"
+        detail="Ask the other device to generate a fresh one, or open azula and paste it in."
+      />
+    </Base>
+  )
+}

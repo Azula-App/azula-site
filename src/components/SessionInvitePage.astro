@@ -1,0 +1,44 @@
+---
+import Base from "../layouts/Base.astro";
+import BrandHeader from "./BrandHeader.astro";
+import InvalidLink from "./InvalidLink.astro";
+import OpenInApp from "./OpenInApp.astro";
+import PasteFallback from "./PasteFallback.astro";
+import { appScheme, isValidToken, sessionFingerprint } from "../lib/links";
+
+interface Props {
+  /** The raw legacy session token from the URL. */
+  token: string;
+}
+
+// The legacy /s/ and /connect/ landing page. Kept byte-for-byte in behaviour
+// during the transition to invite payloads — see URLS.md.
+const { token } = Astro.props;
+const valid = isValidToken(token);
+---
+
+{
+  valid ? (
+    <Base title="azula — join session" bare>
+      <BrandHeader />
+      <div class="sec">
+        <h2>Join an azula session</h2>
+        <p>Opening the app… if nothing happens, it isn't installed yet.</p>
+        <div class="codebox">
+          <span class="k">session</span>
+          <span>{sessionFingerprint(token)}…</span>
+        </div>
+        <OpenInApp scheme={appScheme(token)} />
+        <PasteFallback payload={token} noun="code" />
+      </div>
+    </Base>
+  ) : (
+    <Base title="azula — invalid link" bare>
+      <BrandHeader />
+      <InvalidLink
+        heading="That invite link isn't valid"
+        detail="Ask for a fresh code, or open the azula app and paste it in."
+      />
+    </Base>
+  )
+}

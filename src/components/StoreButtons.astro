@@ -1,0 +1,13 @@
+---
+import { STORE_LINKS } from "../lib/site";
+
+interface Props {
+  center?: boolean;
+}
+const { center = false } = Astro.props;
+---
+
+<div class="btns" style={center ? "justify-content:center" : undefined}>
+  <a class="btn ghost" href={STORE_LINKS.ios.href}>{STORE_LINKS.ios.label}</a>
+  <a class="btn ghost" href={STORE_LINKS.android.href}>{STORE_LINKS.android.label}</a>
+</div>

@@ -1,0 +1,22 @@
+---
+interface Props {
+  /** The azula:// custom-scheme URL for this payload. */
+  scheme: string;
+}
+const { scheme } = Astro.props;
+---
+
+<div class="btns">
+  <a class="btn primary" href={scheme} data-app-scheme>Open in azula</a>
+</div>
+
+<script>
+  // Try the custom scheme; the universal/app link already covers installed apps.
+  // The URL rides on the anchor rather than an inline script so the page needs
+  // no 'unsafe-inline' in its Content-Security-Policy.
+  const link = document.querySelector<HTMLAnchorElement>("a[data-app-scheme]");
+  if (link) {
+    const target = link.getAttribute("href");
+    if (target) setTimeout(() => { window.location.href = target; }, 200);
+  }
+</script>

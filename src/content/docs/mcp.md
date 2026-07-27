@@ -15,15 +15,16 @@ default, or Streamable HTTP with `--http`.
   "mcpServers": {
     "azula": {
       "command": "npx",
-      "args": ["-y", "azula-cli", "mcp"]
+      "args": ["-y", "@azula-app/cli", "mcp"]
     }
   }
 }
 ```
 
-`npx -y azula-cli mcp` works on a machine that has never touched azula before,
-which makes it the most portable form. If you installed with Homebrew or
-`cargo install`, use `"command": "azula", "args": ["mcp"]` instead.
+`npx -y @azula-app/cli mcp` will work on a machine that has never touched
+azula before, once the npm package is published (see [install
+status](/docs/install) — it isn't yet). Until then, run `cargo install azula`
+and use `"command": "azula", "args": ["mcp"]` instead.
 
 For an HTTP transport, run the server yourself and point the client at it:
 

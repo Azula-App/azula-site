@@ -19,11 +19,10 @@ session — all over the same direct link.
 
 ## Getting started
 
-The app is coming to the App Store and Google Play. The CLI you can build today:
+The app is coming to the App Store and Google Play. Install the CLI today:
 
 ```sh
-git clone https://github.com/Azula-App/azula-cli
-cd azula-cli && cargo build --release
+cargo install azula
 ```
 
 Then start an MCP server and scan the pairing code it prints:

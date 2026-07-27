@@ -1,22 +1,12 @@
 ---
 title: Install the CLI
-description: Homebrew, cargo, or npx — plus building from source, which works today.
+description: cargo today; an npm wrapper and Homebrew tap are coming — plus building from source, which always works.
 order: 2
 ---
 
 `azula` is a single Rust binary with no runtime dependencies. Prebuilt
 binaries, an npm wrapper and a Homebrew tap all publish from the same GitHub
 Release.
-
-> **Not released yet.** The three package channels below go live with the
-> first tagged release. Until that tag exists, [build from
-> source](#build-from-source) — it takes one `cargo build`.
-
-## Homebrew — macOS, Linux
-
-```sh
-brew install azula-app/azula/azula
-```
 
 ## cargo — anywhere with a Rust toolchain
 
@@ -28,17 +18,29 @@ Builds and installs the `azula` binary from the crates.io source package.
 
 ## npx — no install at all
 
+> **Coming soon.** The npm package isn't published yet. Until it is, use
+> `cargo install` above or [build from source](#build-from-source).
+
 ```sh
-npx -y azula-cli --version
+npx -y @azula-app/cli --version
 ```
 
-`azula-cli` is a meta package: it fetches the right prebuilt binary for your
-platform as an npm optional dependency (`@azula-app/cli-darwin-arm64`,
+`@azula-app/cli` is a meta package: it fetches the right prebuilt binary for
+your platform as an npm optional dependency (`@azula-app/cli-darwin-arm64`,
 `-darwin-x64`, `-linux-x64`, or `-linux-arm64`) and execs it. Nothing to
 install ahead of time, which makes it the most portable way to get azula into
 an ephemeral environment — a container, a CI runner, a coding-agent sandbox.
-Pin an exact version with `npx -y azula-cli@<version> …` if you don't want to
-float on latest.
+Pin an exact version with `npx -y @azula-app/cli@<version> …` if you don't
+want to float on latest.
+
+## Homebrew — macOS, Linux
+
+> **Coming soon.** Not published yet; a tap (`Azula-App/homebrew-azula`) is
+> planned.
+
+```sh
+brew install azula-app/azula/azula
+```
 
 ## Build from source
 

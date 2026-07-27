@@ -21,10 +21,11 @@ default, or Streamable HTTP with `--http`.
 }
 ```
 
-`npx -y @azula-app/cli mcp` will work on a machine that has never touched
-azula before, once the npm package is published (see [install
-status](/docs/install) — it isn't yet). Until then, run `cargo install azula`
-and use `"command": "azula", "args": ["mcp"]` instead.
+`npx -y @azula-app/cli mcp` works on a machine that has never touched azula
+before — nothing to install ahead of time, which is what makes this entry
+portable across machines, containers, and CI runners. If you'd rather not go
+through npm, `cargo install azula` and use `"command": "azula", "args":
+["mcp"]` instead.
 
 For an HTTP transport, run the server yourself and point the client at it:
 

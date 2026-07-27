@@ -18,9 +18,6 @@ Builds and installs the `azula` binary from the crates.io source package.
 
 ## npx — no install at all
 
-> **Coming soon.** The npm package isn't published yet. Until it is, use
-> `cargo install` above or [build from source](#build-from-source).
-
 ```sh
 npx -y @azula-app/cli --version
 ```

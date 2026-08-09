@@ -17,8 +17,6 @@ export function appleAppSiteAssociation(): unknown {
           components: [
             { "/": "/i/*", comment: "invite links (v2)" },
             { "/": "/l/*", comment: "device-link codes (multi-device-identity task 6.6)" },
-            { "/": "/s/*", comment: "legacy session invite links" },
-            { "/": "/connect/*", comment: "legacy session invite links (alias)" },
           ],
         },
       ],

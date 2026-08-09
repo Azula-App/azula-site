@@ -173,12 +173,13 @@ transfers are **never** relayed — those always need a direct connection.
 `azula pair` writes a device into one of those registries — no network, it just
 decodes the link and saves it — and `azula devices` reads the merged result.
 The ticket below is a placeholder; a real one comes from the app or an
-`azula invite`.
+`azula invite`. `pair` takes an invite link, a bare `azi…` payload, or a bare
+ticket like these.
 
 <!-- example: pair-and-list -->
 
 ```sh
-azula pair https://azula.app/s/cccccccc-phone-new --name phone
+azula pair cccccccc-phone-new --name phone
 azula devices --json
 ```
 
@@ -189,9 +190,9 @@ global entry:
 <!-- example: registry-precedence -->
 
 ```sh
-azula pair --global https://azula.app/s/aaaaaaaa-backup-key --name backup
-azula pair --global https://azula.app/s/bbbbbbbb-phone-old --name phone
-azula pair          https://azula.app/s/cccccccc-phone-new --name phone
+azula pair --global aaaaaaaa-backup-key --name backup
+azula pair --global bbbbbbbb-phone-old --name phone
+azula pair          cccccccc-phone-new --name phone
 
 azula devices
 ```

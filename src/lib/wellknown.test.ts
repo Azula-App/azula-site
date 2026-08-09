@@ -2,16 +2,19 @@ import { describe, expect, it } from "vitest";
 import { appleAppSiteAssociation, assetLinks } from "./wellknown";
 
 describe("appleAppSiteAssociation", () => {
-  it("declares applinks for the session invite paths", () => {
+  it("declares applinks for the invite path", () => {
     const aasa = appleAppSiteAssociation() as any;
     const components = aasa.applinks.details[0].components;
     expect(components).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ "/": "/i/*" }),
-        expect.objectContaining({ "/": "/s/*" }),
-        expect.objectContaining({ "/": "/connect/*" }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ "/": "/i/*" })]),
     );
+  });
+
+  it("no longer claims the retired legacy invite paths", () => {
+    const aasa = appleAppSiteAssociation() as any;
+    const paths = aasa.applinks.details[0].components.map((c: any) => c["/"]);
+    expect(paths).not.toContain("/s/*");
+    expect(paths).not.toContain("/connect/*");
   });
 
   it("declares applinks for the device-link paths (multi-device-identity task 6.6)", () => {

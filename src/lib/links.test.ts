@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
-  appScheme,
   decodeInviteHeader,
   decodeLinkPayloadHeader,
   deviceLinkAppScheme,
   inviteAppScheme,
+  inviteTicketEndpointId,
   isValidInvitePayload,
   isValidLinkPayload,
-  isValidToken,
-  sessionFingerprint,
+  verifyInviteSignature,
 } from "./links";
 
 // Shared cross-repo test vectors (Kotlin `link` module, azula-cli's invite.rs, and
@@ -43,60 +42,6 @@ const LINK_BAD_VERSION =
 // Same vector truncated mid-ticket (must be rejected).
 const LINK_TRUNCATED =
   "azlaeaqeayeaudaocajbifqydiob4ibceqtcqkrmfyydenbwha5dypsacknpeqeyylqorxxaabamf5hk3dbfv2gk43ufvsw4zdqn5uw45bnoruwg23foq";
-
-describe("isValidToken", () => {
-  it("accepts a minimal 6-char URL-safe token", () => {
-    expect(isValidToken("abc123")).toBe(true);
-  });
-
-  it("accepts a token with all allowed characters", () => {
-    expect(isValidToken("abcDEF123._~-")).toBe(true);
-  });
-
-  it("accepts a 4096-char token (upper bound)", () => {
-    expect(isValidToken("a".repeat(4096))).toBe(true);
-  });
-
-  it("rejects a token shorter than 6 chars", () => {
-    expect(isValidToken("abcde")).toBe(false);
-  });
-
-  it("rejects a token longer than 4096 chars", () => {
-    expect(isValidToken("a".repeat(4097))).toBe(false);
-  });
-
-  it("rejects an empty string", () => {
-    expect(isValidToken("")).toBe(false);
-  });
-
-  it("rejects tokens with invalid characters", () => {
-    expect(isValidToken("abc/def")).toBe(false);
-    expect(isValidToken("abc def")).toBe(false);
-    expect(isValidToken("abc+def")).toBe(false);
-    expect(isValidToken("abc?def")).toBe(false);
-    expect(isValidToken("<script>")).toBe(false);
-  });
-});
-
-describe("sessionFingerprint", () => {
-  it("returns the first 8 chars lowercased", () => {
-    expect(sessionFingerprint("ABCDEFGHIJKL")).toBe("abcdefgh");
-  });
-
-  it("handles tokens shorter than 8 chars", () => {
-    expect(sessionFingerprint("AbC123")).toBe("abc123");
-  });
-});
-
-describe("appScheme", () => {
-  it("builds the azula:// deeplink with the token URL-encoded", () => {
-    expect(appScheme("abc123")).toBe("azula://connect?code=abc123");
-  });
-
-  it("URL-encodes special characters in the token", () => {
-    expect(appScheme("a b&c")).toBe("azula://connect?code=a%20b%26c");
-  });
-});
 
 describe("isValidInvitePayload", () => {
   it("accepts the V1 and V2 spec vectors", () => {
@@ -225,5 +170,74 @@ describe("decodeLinkPayloadHeader", () => {
 describe("deviceLinkAppScheme", () => {
   it("builds the azula://l deeplink with the payload URL-encoded", () => {
     expect(deviceLinkAppScheme(LINK_ENCODED)).toBe(`azula://l?c=${LINK_ENCODED}`);
+  });
+});
+
+// --- Real-ticket vectors (the shared V1/V2 vectors above carry a *fake* 32-byte
+// ASCII ticket, so they can't exercise key recovery). Generated from azula-cli:
+// a signed, never-expiring invite minted by endpoint key [7u8; 32] for its own
+// EndpointTicket, which carries a relay URL and one IPv4 direct address.
+const REAL_ENDPOINT_ID_HEX = "ea4a6c63e29c520abef5507b132ec5f9954776aebebe7b92421eea691446d22c";
+const REAL_SIGNED_ENCODED =
+  "aziaea5fl7nw5yfg3aznj4pz6iaaaaaaacdadveu3dd4kofecv66vihwezoyx4zkr3wv27l464siipou2iui3jcyaqaczuhi5dqom5c6l3smvwgc6jomv4gc3lqnrss6aiaycuaclesyibeloazywaf5awcyi4bhlzcmb7ires5hav3kc4pto6lf4fh4c3vtxsyyrkdpf3qm2xwffz2hkjbnusmp4uvpu6azrs73eedpu2ewdz4b4";
+
+function toHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** The same payload with its final base32 char changed: same length, same
+ *  header and ticket, different trailing signature bits. */
+const REAL_SIGNED_TAMPERED =
+  REAL_SIGNED_ENCODED.slice(0, -1) + (REAL_SIGNED_ENCODED.endsWith("a") ? "b" : "a");
+
+describe("inviteTicketEndpointId", () => {
+  it("recovers the issuer endpoint id from a real ticket", () => {
+    const pk = inviteTicketEndpointId(REAL_SIGNED_ENCODED);
+    expect(pk).not.toBeNull();
+    expect(toHex(pk!)).toBe(REAL_ENDPOINT_ID_HEX);
+  });
+
+  it("stays at a fixed offset regardless of how many addresses the ticket carries", () => {
+    // The vector's ticket has a relay URL *and* a direct address after the id.
+    expect(toHex(inviteTicketEndpointId(REAL_SIGNED_ENCODED)!)).toBe(REAL_ENDPOINT_ID_HEX);
+  });
+
+  it("returns null for a payload that does not decode", () => {
+    expect(inviteTicketEndpointId("azinotvalid")).toBeNull();
+    expect(inviteTicketEndpointId("")).toBeNull();
+  });
+
+  it("returns null when the ticket is too short to hold a key", () => {
+    // The shared V1 vector's ticket is 32 ASCII bytes -- one short of the
+    // tag + 32-byte key a real ticket starts with.
+    expect(inviteTicketEndpointId(V1_ENCODED)).toBeNull();
+  });
+});
+
+describe("verifyInviteSignature", () => {
+  it("verifies a real signed invite against its own embedded ticket key", async () => {
+    await expect(verifyInviteSignature(REAL_SIGNED_ENCODED)).resolves.toBe(true);
+  });
+
+  it("rejects a tampered signature", async () => {
+    // Must fail on the signature itself, not by failing to decode -- otherwise
+    // this would pass for the wrong reason.
+    expect(decodeInviteHeader(REAL_SIGNED_TAMPERED)).not.toBeNull();
+    expect(toHex(inviteTicketEndpointId(REAL_SIGNED_TAMPERED)!)).toBe(REAL_ENDPOINT_ID_HEX);
+    await expect(verifyInviteSignature(REAL_SIGNED_TAMPERED)).resolves.toBe(false);
+  });
+
+  it("returns false for an unsigned invite rather than claiming verification", async () => {
+    await expect(verifyInviteSignature(V1_ENCODED)).resolves.toBe(false);
+  });
+
+  it("returns false for a payload that does not decode", async () => {
+    await expect(verifyInviteSignature("azinotvalid")).resolves.toBe(false);
+  });
+
+  it("returns false for the shared V2 vector, whose ticket is not a real one", async () => {
+    // Signed by the RFC 8032 TEST 1 key over a fake ASCII ticket: there is no
+    // recoverable endpoint key, so it must fail closed rather than throw.
+    await expect(verifyInviteSignature(V2_ENCODED)).resolves.toBe(false);
   });
 });

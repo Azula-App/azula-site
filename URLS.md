@@ -16,21 +16,26 @@ that first; this file only documents the Worker-served routes.
 - `https://azula.app/i/<encoded>` — canonical share link (universal/app link).
   Opens the app directly to the invite; falls back to a web page
   (`src/pages/i/[payload].astro`) showing the invite id fingerprint, expiry countdown,
-  signed/single-use badges, store links, and the raw payload to paste. Invalid
-  or truncated payloads fall back to the same invalid-link page as the legacy
-  `/s/` route, with a 404 status.
+  signed/single-use badges, store links, and the raw payload to paste. The
+  signed badge reflects a real Ed25519 check against the key in the payload's
+  own ticket (`verifyInviteSignature`), not just the flag bit. Invalid or
+  truncated payloads render the invalid-link page with a 404 status.
 - `azula://i?c=<encoded>` — custom-scheme fallback, tried by the invite page's
   JS and registered by both apps.
 - A bare `azi…` string can be pasted directly into the app's connect box.
 
-## The legacy session token (still supported)
+## The legacy session token (retired)
 
 Before invite payloads, azula shared the raw iroh `EndpointTicket` string
-directly — a URL-safe **session token** wrapped in a `…/s/<token>` link (or
-`azula://`, or shared as a raw token). The website treats the token
-**opaquely**.
+wrapped in a `…/s/<token>` link, with `/connect/<token>` as an alias and
+`azula://connect?code=<token>` as the custom-scheme form. All three are gone:
+the routes 404, they are no longer claimed in the AASA file, and neither the
+app nor the CLI parses them.
 
-> Legacy tokens are bearer credentials: anyone with one can open a direct
+A **bare** ticket is still accepted where a ticket is expected (`azula pair
+<ticket>`, the app's connect box) — only the URL wrappers were retired.
+
+> A ticket is a bearer credential: anyone with one can open a direct
 > connection to that endpoint. Treat invite links like passwords.
 
 These routes **keep parsing forever for outbound dialing** during the
@@ -48,14 +53,13 @@ share links should use `/i/`.
 | `https://azula.app/llms.txt` | [llms.txt](https://llmstxt.org) index: name, summary, and a link to every page's `.md` with a one-line note. Generated from the content collections. |
 | `https://azula.app/llms-full.txt` | Every page concatenated into one Markdown document. |
 | `https://azula.app/i/<encoded>` | **Invite (v2)** — universal/app link. See above. |
-| `https://azula.app/s/<token>` | *Legacy* session invite — universal/app link. Opens the app to that session; falls back to a web page with the code + store links. `/connect/<token>` is an alias. Legacy-supported, not the canonical share format anymore. |
 | `https://azula.app/mcp` | **MCP endpoint** — *static*; configured once in an LLM client. Sessions are not in the URL; you pair devices via the `connect` tool / `azula pair`. (A `/mcp/<token>` path is accepted but the token is ignored, with a deprecation note.) |
-| `https://azula.app/.well-known/apple-app-site-association` | iOS universal-link association (served as `application/json`); covers `/i/*`, `/s/*`, and `/connect/*`. |
+| `https://azula.app/.well-known/apple-app-site-association` | iOS universal-link association (served as `application/json`); covers `/i/*` and `/l/*`. |
 | `https://azula.app/.well-known/assetlinks.json` | Android App Links association (host-scoped, no per-path entries needed). |
 
-Custom-scheme fallbacks: `azula://i?c=<encoded>` (current) and
-`azula://connect?code=<token>` (legacy, used by the `/s/` invite page's JS and
-registered by both apps).
+Custom-scheme fallback: `azula://i?c=<encoded>`, tried by the invite page's JS
+and registered by both apps. The legacy `azula://connect?code=<token>` form is
+retired and no longer parsed.
 
 ## How the site is built
 
@@ -63,7 +67,7 @@ The site is an [Astro](https://astro.build) project on Cloudflare Workers
 (`@astrojs/cloudflare`). It is **static by default**: pages are prerendered into
 `dist/client` and served as assets, and only the routes that need the request
 opt out with `export const prerender = false` — the deeplink pages (`/i/`,
-`/s/`, `/connect/`, `/l/`), `/mcp`, `/health`, and the two `.well-known` files.
+`/l/`), `/mcp`, `/health`, and the two `.well-known` files.
 
 The `.well-known` files stay Worker-rendered deliberately: the AASA path has no
 file extension, so serving it as a static asset would leave the content type to
@@ -119,7 +123,8 @@ so a browser would refuse a third-party request even if one slipped in.
 
 ## Flow A — link a person (peer chat)
 
-1. App shows the user their code (the ticket) and an invite link `…/s/<token>`.
+1. App shows the user an invite link `…/i/<encoded>` (and their raw ticket
+   alongside it, as the unguarded fallback).
 2. Recipient taps it. If the app is installed and the domain is verified, the OS
    opens the app directly (no web round-trip); otherwise the web page loads and
    offers "Open in azula" (`azula://…`) + store links + the raw code to paste.
@@ -133,8 +138,8 @@ so a browser would refuse a third-party request even if one slipped in.
    alias.
 2. Configure that endpoint **once** in an MCP-capable LLM client — point
    `mcp.azula.app` (or a proxy) at the bridge, or use its address directly.
-3. Pair a device by giving azula its session link: either the **`connect`** tool
-   (paste `https://azula.app/s/<token>` in chat) or **`azula pair <url>`**. The
+3. Pair a device by giving azula its invite link: either the **`connect`** tool
+   (paste `https://azula.app/i/<encoded>` in chat) or **`azula pair <url>`**. The
    bridge parses the token, dials the app on the `azula/llm/0` ALPN, and exposes
    its MCP tools (`connect`, `list_devices`, `send_message`, `send_file`,
    `get_messages`, `wait_for_reply`, `set_name`, `say`, `render_ui`,

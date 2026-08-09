@@ -1,23 +1,3 @@
-// A session token is an iroh EndpointTicket string (or a future short id). It is
-// URL-safe and treated opaquely here — only the Azula app and the MCP↔iroh
-// bridge decode it. See URLS.md for the full scheme.
-
-const TOKEN_RE = /^[A-Za-z0-9._~-]{6,4096}$/;
-
-export function isValidToken(token: string): boolean {
-  return TOKEN_RE.test(token);
-}
-
-/** Short, display-only id for a session (not security-sensitive). */
-export function sessionFingerprint(token: string): string {
-  return token.slice(0, 8).toLowerCase();
-}
-
-/** The canonical custom-scheme deeplink the legacy invite page tries to open. */
-export function appScheme(token: string): string {
-  return `azula://connect?code=${encodeURIComponent(token)}`;
-}
-
 // --- Invite payload v2 (see azula-docs/openspec/specs/invitations/design.md) ---------------
 //
 // Binary header, all integers big-endian:
@@ -27,8 +7,8 @@ export function appScheme(token: string): string {
 //   10  4  issued_at    unix seconds, u32
 //   14  4  expires_at   unix seconds, u32; 0 = never expires
 //   18  2  ticket_len   = n
-//   20  n  ticket       opaque to this codec
-//   20+n 64 signature   present iff flags bit0; Ed25519, opaque to this codec
+//   20  n  ticket       issuer EndpointTicket bytes (postcard); see inviteTicketEndpointId
+//   20+n 64 signature   present iff flags bit0; Ed25519 over bytes [0, 20+n)
 //
 // Encoded as "azi" + base32(payload), RFC 4648 alphabet, no padding, lowercase.
 
@@ -123,6 +103,83 @@ export function decodeInviteHeader(payload: string): InviteHeader | null {
   if (bytes.length !== expectedLen) return null;
 
   return { version, flags, signed, singleUse, inviteId, issuedAt, expiresAt, ticketLen };
+}
+
+/** Copy into a plain `ArrayBuffer` — `Uint8Array`'s buffer may be a
+ *  `SharedArrayBuffer` as far as the type system knows, which `BufferSource`
+ *  rejects. */
+function copyToBuffer(bytes: Uint8Array): ArrayBuffer {
+  const out = new ArrayBuffer(bytes.length);
+  new Uint8Array(out).set(bytes);
+  return out;
+}
+
+/**
+ * The issuer's Ed25519 public key (the endpoint id), read out of the invite's
+ * embedded `EndpointTicket`. Null if the payload doesn't decode or the ticket is
+ * too short to hold one.
+ *
+ * The ticket is postcard-encoded by `iroh_tickets`, and its first two fields are
+ * fixed-width and leading: a single tag byte, then the 32-byte endpoint id. The
+ * variable part (the address set) follows, so the id sits at a constant offset
+ * regardless of how many relay/direct addresses the ticket carries — verified
+ * against real tickets in the test vectors, both a bare one and one with a relay
+ * URL plus IPv4 and IPv6 direct addresses.
+ */
+export function inviteTicketEndpointId(payload: string): Uint8Array | null {
+  const header = decodeInviteHeader(payload);
+  if (!header) return null;
+  const bytes = b32decode(payload.slice(INVITE_PREFIX.length));
+  if (bytes === null) return null;
+
+  const ticket = bytes.slice(INVITE_HEADER_MIN_BYTES, INVITE_HEADER_MIN_BYTES + header.ticketLen);
+  if (ticket.length < 1 + 32) return null;
+  return ticket.slice(1, 33);
+}
+
+/**
+ * Verify a signed invite's Ed25519 signature against the endpoint id embedded in
+ * its own ticket. Returns false for an unsigned payload, one that doesn't decode,
+ * a ticket with no recoverable key, or a signature that doesn't verify.
+ *
+ * **What this does and doesn't establish.** It proves the payload is internally
+ * consistent and untampered: the bytes were signed by whoever holds the endpoint
+ * key the ticket names, and nothing has been edited since. It does *not* say that
+ * endpoint is anyone you trust — a stranger can mint and sign their own invite,
+ * and it will verify here. The real gate runs on the issuer at connect time
+ * (`invitations` spec: the invite id must exist in their issued-invite store);
+ * this is the pre-dial tamper check the design calls "additive, not the gate".
+ */
+export async function verifyInviteSignature(payload: string): Promise<boolean> {
+  const header = decodeInviteHeader(payload);
+  if (!header || !header.signed) return false;
+
+  const bytes = b32decode(payload.slice(INVITE_PREFIX.length));
+  if (bytes === null) return false;
+
+  const publicKey = inviteTicketEndpointId(payload);
+  if (!publicKey) return false;
+
+  const signedLen = INVITE_HEADER_MIN_BYTES + header.ticketLen;
+  const signedInput = bytes.slice(0, signedLen);
+  const signature = bytes.slice(signedLen, signedLen + 64);
+  if (signature.length !== 64) return false;
+
+  try {
+    const key = await crypto.subtle.importKey("raw", copyToBuffer(publicKey), { name: "Ed25519" }, false, [
+      "verify",
+    ]);
+    return await crypto.subtle.verify(
+      { name: "Ed25519" },
+      key,
+      copyToBuffer(signature),
+      copyToBuffer(signedInput),
+    );
+  } catch {
+    // No Ed25519 in this runtime, or a key the curve rejects. Fail closed: the
+    // badge claims verification happened, so it must never appear unverified.
+    return false;
+  }
 }
 
 /** The canonical custom-scheme deeplink the invite page v2 tries to open. */

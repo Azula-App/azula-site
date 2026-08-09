@@ -30,12 +30,17 @@ Revocation is issuer-side: the id lives in the payload, and
 `azula invite revoke <id-prefix>` drops it from your issued-invite store. No
 server is involved, which is why there's nothing to take down.
 
-## Session links — `azula.app/s/<token>` *(legacy)*
+## Retired: session links — `azula.app/s/<token>`
 
 Before invite payloads, azula shared the raw iroh endpoint ticket wrapped in a
-`/s/<token>` link. `/connect/<token>` is an alias for the same thing. These
-keep working — the app and CLI still parse them — but new share links should
-use `/i/`.
+`/s/<token>` link, with `/connect/<token>` as an alias and
+`azula://connect?code=<token>` as the custom-scheme form. All three are gone:
+the routes 404, and the app and CLI no longer parse them. A link of that shape
+is now unrecognized input rather than a dialable ticket.
+
+Use `/i/` invites instead. A **bare** ticket still works where a ticket is
+expected — `azula pair <ticket>`, or pasted into the app's connect box — it's
+only the URL wrappers that were retired.
 
 ## Device-link codes — `azula.app/l/<payload>`
 
@@ -60,6 +65,5 @@ you trust; don't paste them anywhere public.
 Universal Links and App Links need this site to serve two association files as
 unredirected JSON, which it does:
 
-- `/.well-known/apple-app-site-association` — iOS, covering `/i/*`, `/s/*` and
-  `/connect/*`
+- `/.well-known/apple-app-site-association` — iOS, covering `/i/*` and `/l/*`
 - `/.well-known/assetlinks.json` — Android, host-scoped

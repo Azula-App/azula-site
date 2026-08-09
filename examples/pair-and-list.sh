@@ -13,7 +13,7 @@ example_workspace
 example_git_root
 
 run_doc_region <<'EXAMPLE'
-azula pair https://azula.app/s/cccccccc-phone-new --name phone
+azula pair cccccccc-phone-new --name phone
 azula devices --json
 EXAMPLE
 

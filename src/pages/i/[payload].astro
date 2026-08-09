@@ -4,7 +4,7 @@ import BrandHeader from "../../components/BrandHeader.astro";
 import InvalidLink from "../../components/InvalidLink.astro";
 import OpenInApp from "../../components/OpenInApp.astro";
 import PasteFallback from "../../components/PasteFallback.astro";
-import { decodeInviteHeader, inviteAppScheme } from "../../lib/links";
+import { decodeInviteHeader, inviteAppScheme, verifyInviteSignature } from "../../lib/links";
 
 // Invite payload v2 — the canonical share link. See
 // azula-docs/openspec/specs/invitations/design.md. Rendered per request: the
@@ -15,6 +15,10 @@ const payload = Astro.params.payload ?? "";
 const header = decodeInviteHeader(payload);
 
 if (!header) Astro.response.status = 404;
+
+// The "signed" badge reflects an actual Ed25519 verification against the key in
+// the payload's own ticket -- not just the flag bit, which anyone can set.
+const signatureValid = header?.signed ? await verifyInviteSignature(payload) : false;
 
 const expiryFallback = header
   ? header.expiresAt === 0
@@ -37,7 +41,8 @@ const expiryFallback = header
           <span>{header.inviteId}</span>
         </div>
         <div class="btns" style="margin-top:2px">
-          {header.signed && <span class="pill">✓ signed</span>}
+          {signatureValid && <span class="pill">✓ signed</span>}
+          {header.signed && !signatureValid && <span class="pill">⚠ bad signature</span>}
           {header.singleUse && <span class="pill">⚡ single-use</span>}
           <span class="pill" id="expiry" data-expires-at={String(header.expiresAt)}>
             {expiryFallback}
@@ -45,8 +50,13 @@ const expiryFallback = header
         </div>
         <OpenInApp scheme={inviteAppScheme(payload)} />
         <p style="margin-top:18px;color:var(--content-faint);font-size:12.5px">
-          Signed invites are verified by the app when you connect — this page does not verify the
-          signature (that's planned future work).
+          {
+            signatureValid
+              ? "This invite's signature checks out, so it hasn't been altered since it was made. That doesn't vouch for who sent it — anyone can sign their own invite. The app does the real check against the issuer when you connect."
+              : header.signed
+                ? "This invite claims to be signed, but the signature doesn't check out — it may have been altered. Ask for a fresh one."
+                : "This invite isn't signed, so there's nothing here to check against. The app verifies it with the issuer when you connect."
+          }
         </p>
         <PasteFallback payload={payload} noun="invite" />
       </div>

@@ -15,9 +15,9 @@ example_workspace
 example_git_root   # so plain `pair` writes <cwd>/.azula (registry.rs:80)
 
 run_doc_region <<'EXAMPLE'
-azula pair --global https://azula.app/s/aaaaaaaa-backup-key --name backup
-azula pair --global https://azula.app/s/bbbbbbbb-phone-old --name phone
-azula pair          https://azula.app/s/cccccccc-phone-new --name phone
+azula pair --global aaaaaaaa-backup-key --name backup
+azula pair --global bbbbbbbb-phone-old --name phone
+azula pair          cccccccc-phone-new --name phone
 
 azula devices
 EXAMPLE

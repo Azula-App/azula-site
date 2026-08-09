@@ -54,6 +54,8 @@ binary — add `-p azula` to build just the production CLI.
 
 ## Verify it works
 
+<!-- example: status-fresh -->
+
 ```sh
 azula status
 ```

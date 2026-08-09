@@ -75,14 +75,23 @@ prompt.
 reports the failure even though someone poked around afterwards.
 
 `--handoff on-error` is the default; `always` hands off regardless of exit
-code; `never` is a pure PTY passthrough.
+code; `never` is a pure PTY passthrough — output is mirrored unmodified and the
+wrapped command's exit code becomes azula's own, which is what lets you wrap a
+CI step without changing what CI sees:
+
+<!-- example: run-passthrough -->
+
+```sh
+azula run --handoff never -- sh -c 'echo building; exit 3'
+echo "exit code: $?"
+```
 
 ## `azula terminal` — persistent named shells
 
 ```sh
 azula terminal                                 # host one interactive shell inline
 azula terminal new --cmd "claude" --name work  # spawn a detached, named session
-azula terminal list [--json]                   # see what's running
+azula terminal list                            # see what's running (--json too)
 azula terminal attach work                     # continue it from any shell
 azula terminal kill work                       # tear it down
 ```
@@ -95,11 +104,28 @@ from a laptop shell as easily as from the phone. Detach with `Ctrl-\`.
 ## Scripting it directly
 
 Everything the MCP tools do is available to a shell script through the same
-verbs plus `azula watch --json`:
+verbs plus `azula watch --json`. Learn the vocabulary once:
+
+<!-- example: ui-catalog -->
 
 ```sh
-azula ui catalog    # learn the A2UI vocabulary once
+azula ui catalog
+```
 
+A component list is validated locally, before any device is dialed — a bad
+tree fails fast with exit code 2 rather than half-drawing a surface:
+
+<!-- example: ui-render-validation -->
+
+```sh
+echo '[{"id":"card","component":"Text","text":"hi"}]' | azula ui render -
+echo "exit code: $?"
+```
+
+Put together: render a surface under a known id, then answer its events by
+updating the data model at that same id.
+
+```sh
 echo '[
   {"id":"root","component":"Column","children":["title","face","roll"]},
   {"id":"title","component":"Text","text":"AZULA · DICE","variant":"caption"},
@@ -107,12 +133,12 @@ echo '[
   {"id":"rollL","component":"Text","text":"ROLL"},
   {"id":"roll","component":"Button","child":"rollL","variant":"primary",
    "action":{"event":{"name":"roll"}}}
-]' | azula ui render --device phone --data-model '{"you":"?"}' -
+]' | azula ui render --device phone --surface dice --data-model '{"you":"?"}' -
 
 azula watch --device phone --json | while read -r line; do
   case "$line" in
     *'"type":"ui_event"'*'"name":"roll"'*)
-      azula ui update --device phone --surface "$SURFACE" /you '"⚄"'
+      azula ui update --device phone --surface dice /you '"⚄"'
       ;;
   esac
 done
@@ -144,4 +170,31 @@ transfers are **never** relayed — those always need a direct connection.
 | relay hints | `relay-hints.json` beside each `devices.json` | Which relay ticket to try for a device |
 | sessions | `~/.azula/sessions/<name>.key`, `$TMPDIR/azula/sessions/` | Session key material |
 
-Reads merge global then project, and project wins on a name collision.
+`azula pair` writes a device into one of those registries — no network, it just
+decodes the link and saves it — and `azula devices` reads the merged result.
+The ticket below is a placeholder; a real one comes from the app or an
+`azula invite`.
+
+<!-- example: pair-and-list -->
+
+```sh
+azula pair https://azula.app/s/cccccccc-phone-new --name phone
+azula devices --json
+```
+
+Reads merge global then project, and project wins on a name collision — so a
+checkout can point a shared name at its own device without disturbing the
+global entry:
+
+<!-- example: registry-precedence -->
+
+```sh
+azula pair --global https://azula.app/s/aaaaaaaa-backup-key --name backup
+azula pair --global https://azula.app/s/bbbbbbbb-phone-old --name phone
+azula pair          https://azula.app/s/cccccccc-phone-new --name phone
+
+azula devices
+```
+
+`backup` is only global so it survives untouched; `phone` resolves to the
+project ticket.

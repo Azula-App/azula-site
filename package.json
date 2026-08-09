@@ -9,6 +9,7 @@
     "preview": "astro preview",
     "typecheck": "astro check",
     "test": "vitest run",
+    "examples": "examples/run.sh",
     "verify": "npm run typecheck && npm test && npm run build && node scripts/check-build.mjs",
     "deploy": "astro build && wrangler deploy",
     "cf-typegen": "wrangler types"

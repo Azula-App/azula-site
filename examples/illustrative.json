@@ -1,0 +1,80 @@
+[
+  {
+    "sha256": "66ceac49d4b83632",
+    "page": "docs/cli.md",
+    "block": "azula run --handoff on-error -- make test",
+    "reason": "`on-error` binds an iroh endpoint and holds the session open so a phone can attach. Only `--handoff never` returns before binding (run_cmd.rs:140), and that path is covered by run-passthrough.sh."
+  },
+  {
+    "sha256": "9c5b0c3c8ffcc25f",
+    "page": "docs/cli.md",
+    "block": "azula terminal / new / list / attach / kill",
+    "reason": "Hosting, spawning and attaching all bind an endpoint. `terminal list` alone is pure disk and is covered by terminal-list-empty.sh; the block is published whole because the five verbs only make sense together."
+  },
+  {
+    "sha256": "21f3f1d4a3fec421",
+    "page": "docs/cli.md",
+    "block": "dice surface: ui render + watch loop",
+    "reason": "A *valid* component tree proceeds past validation to bind and dial (ui.rs:131), and `watch` needs a paired phone to emit events. The rejection path is covered by ui-render-validation.sh."
+  },
+  {
+    "sha256": "1ca68149c9680e06",
+    "page": "docs/cli.md",
+    "block": "azula link --relay; azula relay",
+    "reason": "`link` binds and then blocks waiting for a root-holding device to send a LinkGrant — the CLI only ever plays the new-device role (link.rs:35), so it cannot be driven from a second CLI."
+  },
+  {
+    "sha256": "05f9185aa766aee5",
+    "page": "docs/index.md, pages/home.md",
+    "block": "azula mcp",
+    "reason": "Binds an endpoint and awaits `online()` before serving. Its flags are still checked against the binary by the CLI-surface layer."
+  },
+  {
+    "sha256": "8d6c3ed472664211",
+    "page": "docs/index.md",
+    "block": "message send / watch / run --handoff on-error",
+    "reason": "All three need a paired peer: `message send` and `watch` go through core::establish, and `on-error` binds to hold the handoff session."
+  },
+  {
+    "sha256": "a966c9e0c324bb20",
+    "page": "docs/install.md, pages/home.md",
+    "block": "cargo install azula",
+    "reason": "Installs into the reader's own toolchain and needs crates.io. Running it would mutate the machine the examples are meant to leave untouched."
+  },
+  {
+    "sha256": "236bb3a0572709eb",
+    "page": "docs/install.md",
+    "block": "npx -y @azula-app/cli --version",
+    "reason": "Needs the npm registry. This is a way to *obtain* the binary, so running it as an example would be circular."
+  },
+  {
+    "sha256": "1613673ffc1ee74d",
+    "page": "docs/install.md",
+    "block": "brew install azula-app/azula/azula",
+    "reason": "Needs Homebrew and the network, and mutates the reader's machine."
+  },
+  {
+    "sha256": "3a33c44ca9330e54",
+    "page": "docs/install.md",
+    "block": "git clone + cargo build --release",
+    "reason": "Clones and compiles the CLI from scratch — minutes of network and CPU, and it is how the binary under test was produced in the first place."
+  },
+  {
+    "sha256": "af6491a39ae6fa9f",
+    "page": "docs/links.md",
+    "block": "azula invite --expires 24h --sign --single-use",
+    "reason": "`cmd_invite_mint` binds a server endpoint and awaits `online()` (legacy.rs:319) before it can mint anything."
+  },
+  {
+    "sha256": "fea70c4b5735d7bb",
+    "page": "docs/mcp.md",
+    "block": "azula mcp --http 127.0.0.1:8765",
+    "reason": "Binds an endpoint, and then stays running as a server. Its flags are still checked by the CLI-surface layer."
+  },
+  {
+    "sha256": "4f46720f9ab9f4dd",
+    "page": "docs/mcp.md",
+    "block": "azula pair https://azula.app/i/<payload> --name phone",
+    "reason": "Carries a literal `<payload>` placeholder. The invite form also goes through InvitePayload::decode, which needs a genuinely minted payload — unlike the legacy /s/ form used by pair-and-list.sh."
+  }
+]

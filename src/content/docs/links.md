@@ -1,7 +1,7 @@
 ---
 title: Links and the URL scheme
 description: What an azula.app/i/… link carries, how it opens the app, and why you should treat one like a password.
-order: 5
+order: 6
 ---
 
 Sharing access to an azula node means handing someone a **link**. This site

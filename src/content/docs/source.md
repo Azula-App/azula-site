@@ -1,7 +1,7 @@
 ---
 title: Source
 description: Every azula repo on GitHub — app, CLI, transport bindings, specs, and this site.
-order: 6
+order: 7
 ---
 
 azula is split across sibling repos on

@@ -31,6 +31,12 @@ script can do by shelling out to these verbs.
 | `azula invite [--expires W] [--sign] [--single-use] [--bridge]` | Mint a signed invite; `azula invite revoke <id-prefix>` deletes one |
 | `azula invites` | List invites this node has issued |
 | `azula link [--name N] [--relay]` | Enroll this CLI as a sibling device of an existing identity |
+| `azula compute exec [--vm NAME] [--stdin] [--detach] [--timeout D] -- CMD…` | Run a command in a VM on a Mac host; reconnects and resumes if the connection drops — see [Remote compute](/docs/compute) |
+| `azula compute attach\|logs\|jobs\|cancel` | Follow, read, list or stop jobs, which outlive the connection that started them |
+| `azula compute push\|pull [-r] SRC DST` | Copy files or trees to and from the VM, SHA-256-verified and resumable |
+| `azula compute doctor [--vm NAME]` | Check each hop to a compute host: relay, dial, grant, guest |
+| `azula compute serve` / `grant` / `grants` / `revoke` | Host side (Apple silicon macOS): run the broker and manage grants |
+| `azula vm create\|start\|stop\|status\|list\|delete` | Manage the VMs a compute host runs |
 
 Every command supports `--help`. The one-shot verbs (`message`, `ui`, `file`,
 `watch`) also support `--json` for machine-readable output.

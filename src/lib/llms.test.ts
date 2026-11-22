@@ -50,6 +50,23 @@ describe("markdownDocument", () => {
   });
 });
 
+describe("computeQuickstart in llmsIndex", () => {
+  const index = llmsIndex({ docs: [CLI], pages: [HOME], origin: "https://azula.app" });
+
+  it("tells a cloud agent how to use remote compute, inline", () => {
+    expect(index).toContain("## Remote compute for cloud agents");
+    expect(index).toContain("AZULA_COMPUTE_TOKEN");
+    expect(index).toContain("npx -y @azula-app/cli compute exec -- uname -a");
+    expect(index).toContain("npx -y @azula-app/cli compute push -r");
+    expect(index).toContain("dns.iroh.link");
+    expect(index).toContain("https://azula.app/docs/compute.md");
+  });
+
+  it("comes before the docs list", () => {
+    expect(index.indexOf("## Remote compute for cloud agents")).toBeLessThan(index.indexOf("## Docs"));
+  });
+});
+
 describe("llmsIndex", () => {
   const index = llmsIndex({ docs: [CLI], pages: [HOME, PRIVACY], origin: "https://azula.app" });
 
